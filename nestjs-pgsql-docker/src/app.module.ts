@@ -4,6 +4,8 @@ import * as dotenv from 'dotenv';
 import { BullModule } from '@nestjs/bull';
 import { ScamsModule } from './scams/scams.module';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { UserActivityLogsModule } from './user_activity_logs/user_activity_logs.module';
+import { CrawlWebPuppeterModule } from './crawl_web_puppeter/crawl_web_puppeter.module';
 
 dotenv.config();
 
@@ -32,6 +34,8 @@ dotenv.config();
       },
     }),
     ScamsModule,
+    UserActivityLogsModule,
+    CrawlWebPuppeterModule,
   ],
   controllers: [],
   providers: [],
