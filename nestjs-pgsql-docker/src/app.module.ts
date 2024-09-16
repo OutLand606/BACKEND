@@ -7,6 +7,9 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { UserActivityLogsModule } from './user_activity_logs/user_activity_logs.module';
 import { CrawlWebPuppeterModule } from './crawl_web_puppeter/crawl_web_puppeter.module';
 
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+
 dotenv.config();
 
 @Module({
@@ -36,6 +39,8 @@ dotenv.config();
     ScamsModule,
     UserActivityLogsModule,
     CrawlWebPuppeterModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],
