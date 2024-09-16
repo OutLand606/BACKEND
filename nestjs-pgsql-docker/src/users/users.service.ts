@@ -6,9 +6,11 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { UserEntity } from './entities/users.entity';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
+  private readonly saltRounds = 10;
   constructor(
     @InjectRepository(UserEntity)
     private readonly UserEntity: Repository<UserEntity>,
@@ -16,25 +18,31 @@ export class UsersService {
   ) {}
 
   async findOne(email: any) {
-    const data = await this.connection.query(`
-      select * from user_table where email = N'${email}'
-    `);
-    return {
-      id: data[0]?.id,
-      userName: data[0]?.user_name,
-      passWord: data[0]?.pass,
+    return await this.UserEntity.findOne({ where: { email: email } });
+  }
+
+  async createUser({ username, email, password }) {
+    const existingUser = await this.findOne(email);
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+    const hashedPassword = await bcrypt.hash(password, this.saltRounds);
+    const data = {
+      userName: username,
+      email: email,
+      passWord: hashedPassword,
     };
-  }
-
-  async create(data: any) {
-    return this.UserEntity.save(data);
-  }
-
-  async update(id: any, updateData: any) {
-    return await this.UserEntity.update(id, updateData);
+    return await this.UserEntity.save(data);
   }
 
   async remove(id: any) {
     await this.UserEntity.delete(id);
+  }
+
+  async validatePassword(
+    plainPassword: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(plainPassword, hashedPassword);
   }
 }
