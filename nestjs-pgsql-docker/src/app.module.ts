@@ -6,7 +6,7 @@ import { ScamsModule } from './scams/scams.module';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { UserActivityLogsModule } from './user_activity_logs/user_activity_logs.module';
 import { CrawlWebPuppeterModule } from './crawl_web_puppeter/crawl_web_puppeter.module';
-
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
@@ -26,6 +26,12 @@ dotenv.config();
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: 10,
+      },
+    ]),
     BullModule.forRoot({
       redis: {
         host: 'localhost',
@@ -45,7 +51,8 @@ dotenv.config();
     UsersModule,
   ],
   controllers: [],
-  providers: [ // using authentication all APP
+  providers: [
+    // using authentication all Controller
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
