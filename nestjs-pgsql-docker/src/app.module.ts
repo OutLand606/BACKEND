@@ -9,6 +9,8 @@ import { CrawlWebPuppeterModule } from './crawl_web_puppeter/crawl_web_puppeter.
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/auth.guard';
 
 dotenv.config();
 
@@ -43,7 +45,12 @@ dotenv.config();
     UsersModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [ // using authentication all APP
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
   exports: [],
 })
 export class AppModule {}
