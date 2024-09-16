@@ -7,6 +7,11 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { UserActivityLogsModule } from './user_activity_logs/user_activity_logs.module';
 import { CrawlWebPuppeterModule } from './crawl_web_puppeter/crawl_web_puppeter.module';
 
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/auth.guard';
+
 dotenv.config();
 
 @Module({
@@ -36,9 +41,16 @@ dotenv.config();
     ScamsModule,
     UserActivityLogsModule,
     CrawlWebPuppeterModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [ // using authentication all APP
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
   exports: [],
 })
 export class AppModule {}
