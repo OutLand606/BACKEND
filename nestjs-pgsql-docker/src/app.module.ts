@@ -11,6 +11,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
+import { VmModule } from './vm/vm.module';
+import { RemoteDesktopModule } from './remote_desktop/remote_desktop.module';
 
 dotenv.config();
 
@@ -49,6 +51,8 @@ dotenv.config();
     CrawlWebPuppeterModule,
     AuthModule,
     UsersModule,
+    VmModule,
+    RemoteDesktopModule,
   ],
   controllers: [],
   providers: [
