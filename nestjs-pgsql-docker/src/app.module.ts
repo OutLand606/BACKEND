@@ -13,6 +13,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
 import { VmModule } from './vm/vm.module';
 import { RemoteDesktopModule } from './remote_desktop/remote_desktop.module';
+import { AndroidModule } from './android/android.module';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ dotenv.config();
     UsersModule,
     VmModule,
     RemoteDesktopModule,
+    AndroidModule,
   ],
   controllers: [],
   providers: [

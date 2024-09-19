@@ -6,7 +6,15 @@ const execPromise = promisify(exec);
 
 @Injectable()
 export class RemoteDesktopService {
-  async openRdpSession(host, username, password): Promise<void> {
+  async openRdpSession({
+    host,
+    username,
+    password,
+  }: {
+    host: string;
+    username: string;
+    password: string;
+  }): Promise<void> {
     try {
       // Command to open RDP session
       const command = `mstsc /v:${host} /u:${username} /p:${password}`;

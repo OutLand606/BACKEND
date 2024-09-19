@@ -19,7 +19,7 @@ export class RemoteDesktopController {
     },
   ): Promise<object> {
     const { host, username, password } = body;
-    await this.service.openRdpSession(host, username, password);
+    await this.service.openRdpSession({ host, username, password });
     return { message: 'Connect success' };
   }
 }
