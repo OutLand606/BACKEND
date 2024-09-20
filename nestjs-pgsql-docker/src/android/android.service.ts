@@ -230,28 +230,44 @@ export class AndroidService {
 
   async launcherApp(body): Promise<string> {
     const listDevices = await this.getActiveDevices();
-    const commands = [
-      //   `am start -a android.intent.action.VIEW -d ${body.url}`,
-      'monkey -p com.android.chrome -c android.intent.category.LAUNCHER 1',
-      // 'am force-stop com.google.android.youtube',
-      // 'monkey -p org.telegram.messenger.web -c android.intent.category.LAUNCHER 1',
-    ];
-    return await this.executeCommands(listDevices, commands);
+    if (body?.condition === 'launch') {
+      const commands = [
+        //   `am start -a android.intent.action.VIEW -d ${body.url}`,
+        'monkey -p org.telegram.messenger.web -c android.intent.category.LAUNCHER 1',
+      ];
+      return await this.executeCommands(listDevices, commands);
+    }
+
+    if (body?.condition === 'kill') {
+      const commands = [
+        'am force-stop org.telegram.messenger.web',
+      ];
+      return await this.executeCommands(listDevices, commands);
+    }
+
   }
 
   async runScripts() {
     const listDevices = await this.getActiveDevices();
     const adbCommands: string[] = [
-      ` input keyevent 61`,
-      ` input keyevent 61`,
-      ` input keyevent 61`,
-      ` input keyevent 61`,
-      ` input keyevent 66`,
+      // ` input keyevent 61`,
+      // ` input keyevent 61`,
+      // ` input keyevent 61`,
+      // ` input keyevent 61`,
+      // ` input keyevent 66`,
+      // ` input text 'Moonbix'`,
+      // ` input keyevent 66`,
+      // ` input tap 300 320 `,
+      // ` input text '/start'`,
+      // ` input keyevent 61`,
+      // ` input tap 320 958 `,
+      ` input tap 636 110 `,
       ` input text 'Moonbix'`,
       ` input keyevent 66`,
-      ` input keyevent 61`,
-      ` input keyevent 61`,
-      ` input tap 300 200 `,
+      ` input tap 381 369 `,
+      ` input tap 95 1180 `,
+      ` input tap 618 754 `,
+      ` input tap 357 1020 `,
     ];
     return await this.executeCommands(listDevices, adbCommands);
   }

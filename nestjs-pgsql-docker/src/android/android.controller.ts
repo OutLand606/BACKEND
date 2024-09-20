@@ -47,7 +47,6 @@ export class AndroidController {
     }),
   )
   async installApk(@UploadedFiles() files: MulterFile[]): Promise<string[]> {
-    console.log(11231,files)
     if (!files || files.length === 0) {
       throw new Error('Không có tệp nào được tải lên.');
     }
@@ -64,12 +63,12 @@ export class AndroidController {
     return results;
   }
 
-  @Post('launch-app')
+  @Post('launch-kill-app')
   async launcherApp(@Body() body): Promise<string> {
     return this.androidService.launcherApp(body);
   }
 
-  @Post('run-cripts')
+  @Post('run-scripts')
   async runScripts(): Promise<string> {
     return this.androidService.runScripts();
   }
