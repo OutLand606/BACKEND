@@ -59,7 +59,12 @@ export class AndroidController {
   }
 
   @Post('launch-app')
-  async navigateToUrl(@Body() body): Promise<string> {
-    return this.androidService.navigateToUrl(body);
+  async launcherApp(@Body() body): Promise<string> {
+    return this.androidService.launcherApp(body);
+  }
+
+  @Post('run-cripts')
+  async runScripts(): Promise<string> {
+    return this.androidService.runScripts();
   }
 }
