@@ -20,6 +20,11 @@ export class AndroidController {
     return await this.androidService.startAllAvds();
   }
 
+  @Get('close-avd-emulator')
+  async closeAVD(): Promise<any> {
+    return await this.androidService.closeAllAvds();
+  }
+
   @Get('list-devices-and-app-install')
   async listDevices(): Promise<any> {
     const listDevices = await this.androidService.getActiveDevices();
@@ -42,6 +47,7 @@ export class AndroidController {
     }),
   )
   async installApk(@UploadedFiles() files: MulterFile[]): Promise<string[]> {
+    console.log(11231,files)
     if (!files || files.length === 0) {
       throw new Error('Không có tệp nào được tải lên.');
     }
