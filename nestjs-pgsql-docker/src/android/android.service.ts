@@ -8,6 +8,36 @@ const execPromise = promisify(exec);
 
 @Injectable()
 export class AndroidService {
+  // async startAllAvds(): Promise<string[]> {
+  //   try {
+  //     const { stdout: listOutput } = await execPromise('emulator -list-avds');
+  //     const avdList = listOutput.split('\n').filter((avd) => avd.trim() !== '');
+  //     if (avdList.length === 0) {
+  //       throw new Error('Không tìm thấy máy ảo nào.');
+  //     }
+  //     const startPromises = avdList.map(async (avdName) => {
+  //       return new Promise<string>((resolve, reject) => {
+  //         const process = spawn('emulator', ['-avd', avdName], {
+  //           detached: true,
+  //           stdio: 'ignore',
+  //         });
+  //         process.on('error', (error) => {
+  //           reject(`Lỗi khi khởi động AVD ${avdName}: ${error.message}`);
+  //         });
+  //         process.unref();
+  //         resolve(`Máy ảo ${avdName} đang được khởi động độc lập.`);
+  //       });
+  //     });
+
+  //     const results = await Promise.all(startPromises);
+  //     return results;
+  //   } catch (error) {
+  //     throw new Error(
+  //       `Lỗi khi lấy danh sách AVD hoặc khởi động AVD: ${error.message}`,
+  //     );
+  //   }
+  // }
+
   async startAllAvds(): Promise<string[]> {
     try {
       const { stdout: listOutput } = await execPromise('emulator -list-avds');
@@ -17,15 +47,29 @@ export class AndroidService {
       }
       const startPromises = avdList.map(async (avdName) => {
         return new Promise<string>((resolve, reject) => {
-          const process = spawn('emulator', ['-avd', avdName], {
-            detached: true,
-            stdio: 'ignore',
-          });
-          process.on('error', (error) => {
+          let cmdProcess;
+
+          if (process.platform === 'win32') {
+            cmdProcess = spawn('cmd.exe', ['/c', `emulator -avd ${avdName}`], {
+              detached: false,
+              stdio: 'ignore',
+            });
+          } else if (process.platform === 'darwin') {
+            cmdProcess = spawn('emulator', ['-avd', avdName], {
+              detached: false,
+              stdio: 'ignore',
+            });
+          } else if (process.platform === 'linux') {
+            cmdProcess = spawn('emulator', ['-avd', avdName], {
+              detached: false,
+              stdio: 'ignore',
+            });
+          }
+          cmdProcess.on('error', (error) => {
             reject(`Lỗi khi khởi động AVD ${avdName}: ${error.message}`);
           });
-          process.unref();
-          resolve(`Máy ảo ${avdName} đang được khởi động độc lập.`);
+          cmdProcess.unref();
+          resolve(`Máy ảo ${avdName} đang được khởi động trong nền.`);
         });
       });
 
@@ -35,6 +79,33 @@ export class AndroidService {
       throw new Error(
         `Lỗi khi lấy danh sách AVD hoặc khởi động AVD: ${error.message}`,
       );
+    }
+  }
+
+  async closeAllAvds(): Promise<string[]> {
+    try {
+      const listDevices = await this.getActiveDevices();
+      if (listDevices.length === 0) {
+        throw new Error('Không có máy ảo nào đang chạy.');
+      }
+
+      // Tạo Promise để đóng tất cả các AVD
+      const closePromises = listDevices.map(async (avd) => {
+        return new Promise<string>(async (resolve, reject) => {
+          try {
+            // Gửi lệnh dừng AVD với ADB
+            await execPromise(`adb -s ${avd} emu kill`);
+            resolve(`Máy ảo ${avd} đã được đóng.`);
+          } catch (error) {
+            reject(`Lỗi khi đóng máy ảo ${avd}: ${error.message}`);
+          }
+        });
+      });
+
+      const results = await Promise.all(closePromises);
+      return results;
+    } catch (error) {
+      throw new Error(`Lỗi khi đóng các AVD: ${error.message}`);
     }
   }
 
@@ -103,7 +174,7 @@ export class AndroidService {
       for (const device of devices) {
         try {
           const { stderr } = await execPromise(
-            `adb -s ${device} install -r ${tempFilePath}`,
+            `adb -s ${device} install -r "${tempFilePath}"`,
           );
           if (stderr) {
             results.push(
@@ -154,16 +225,16 @@ export class AndroidService {
   }
 
   async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async launcherApp(body): Promise<string> {
     const listDevices = await this.getActiveDevices();
     const commands = [
       //   `am start -a android.intent.action.VIEW -d ${body.url}`,
-      // 'monkey -p com.google.android.youtube -c android.intent.category.LAUNCHER 1',
+      'monkey -p com.android.chrome -c android.intent.category.LAUNCHER 1',
       // 'am force-stop com.google.android.youtube',
-      'monkey -p org.telegram.messenger.web -c android.intent.category.LAUNCHER 1',
+      // 'monkey -p org.telegram.messenger.web -c android.intent.category.LAUNCHER 1',
     ];
     return await this.executeCommands(listDevices, commands);
   }
