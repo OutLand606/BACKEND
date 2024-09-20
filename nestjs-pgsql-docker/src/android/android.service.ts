@@ -106,7 +106,9 @@ export class AndroidService {
             `adb -s ${device} install -r ${tempFilePath}`,
           );
           if (stderr) {
-            results.push(`Lỗi khi cài đặt ${originalname} trên ${device}: ${stderr}`);
+            results.push(
+              `Lỗi khi cài đặt ${originalname} trên ${device}: ${stderr}`,
+            );
           } else {
             results.push(
               `Cài đặt APK ${originalname} thành công trên ${device}`,
@@ -140,6 +142,7 @@ export class AndroidService {
             if (stderr) {
               throw new Error(stderr);
             }
+            await this.delay(500);
             console.log(`Output from device ${deviceId}: ${stdout}`);
           } catch (error) {}
         }
@@ -150,7 +153,11 @@ export class AndroidService {
     }
   }
 
-  async navigateToUrl(body): Promise<string> {
+  async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async launcherApp(body): Promise<string> {
     const listDevices = await this.getActiveDevices();
     const commands = [
       //   `am start -a android.intent.action.VIEW -d ${body.url}`,
@@ -158,7 +165,23 @@ export class AndroidService {
       // 'am force-stop com.google.android.youtube',
       'monkey -p org.telegram.messenger.web -c android.intent.category.LAUNCHER 1',
     ];
-
     return await this.executeCommands(listDevices, commands);
+  }
+
+  async runScripts() {
+    const listDevices = await this.getActiveDevices();
+    const adbCommands: string[] = [
+      ` input keyevent 61`,
+      ` input keyevent 61`,
+      ` input keyevent 61`,
+      ` input keyevent 61`,
+      ` input keyevent 66`,
+      ` input text 'Moonbix'`,
+      ` input keyevent 66`,
+      ` input keyevent 61`,
+      ` input keyevent 61`,
+      ` input tap 300 200 `,
+    ];
+    return await this.executeCommands(listDevices, adbCommands);
   }
 }
