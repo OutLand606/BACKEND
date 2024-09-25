@@ -4,6 +4,7 @@ import { newInjectedPage } from 'fingerprint-injector';
 import { parseWithOllama } from 'helper/ai-ollama/ollama';
 import { Devices, OperatingSystems } from './enum_type/enum_type_devices';
 
+import { connect } from 'puppeteer-real-browser';
 
 @Injectable()
 export class CrawlWebPuppeterService {
@@ -39,5 +40,46 @@ export class CrawlWebPuppeterService {
 
   async getRandomDevice(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  async openNewDtaWebFingerPrint(url: string) {
+    const { page, browser }: any = await connect({
+      args: [],
+      turnstile: true,
+      headless: false,
+      customConfig: {},
+      connectOption: {
+        defaultViewport: null,
+      },
+      // proxy:{
+      //     host:'<proxy-host>',
+      //     port:'<proxy-port>',
+      //     username:'<proxy-username>',
+      //     password:'<proxy-password>'
+      // }
+      // plugins: [require('puppeteer-extra-plugin-click-and-wait')()],
+    });
+
+    // await page.goto("https://google.com", { waitUntil: "domcontentloaded" })
+    // await page.clickAndWaitForNavigation('body')
+
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+    // Wait for the search textarea to appear using the known id or name attribute
+    await page.waitForSelector('textarea[name="q"]');
+
+    // Click on the search bar
+    await page.click('textarea[name="q"]');
+
+    // Type the search query (you can replace 'Your search query' with the actual query)
+    await page.type('textarea[name="q"]', 'chữ ký hay chữ kí', { delay: 100 });
+
+    // Press 'Enter' to start the search
+    await page.keyboard.press('Enter');
+
+    // Wait for the page to navigate after search
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
+
+    // await browser.close();
   }
 }
