@@ -69,7 +69,10 @@ export class AndroidController {
   }
 
   @Post('run-scripts')
-  async runScripts(): Promise<string> {
-    return this.androidService.runScripts();
+  async runScripts(
+    @Body() body: { application: string; scripts: string },
+  ): Promise<string> {
+    const { application, scripts } = body;
+    return this.androidService.runScripts(application, scripts);
   }
 }

@@ -8,36 +8,6 @@ const execPromise = promisify(exec);
 
 @Injectable()
 export class AndroidService {
-  // async startAllAvds(): Promise<string[]> {
-  //   try {
-  //     const { stdout: listOutput } = await execPromise('emulator -list-avds');
-  //     const avdList = listOutput.split('\n').filter((avd) => avd.trim() !== '');
-  //     if (avdList.length === 0) {
-  //       throw new Error('Không tìm thấy máy ảo nào.');
-  //     }
-  //     const startPromises = avdList.map(async (avdName) => {
-  //       return new Promise<string>((resolve, reject) => {
-  //         const process = spawn('emulator', ['-avd', avdName], {
-  //           detached: true,
-  //           stdio: 'ignore',
-  //         });
-  //         process.on('error', (error) => {
-  //           reject(`Lỗi khi khởi động AVD ${avdName}: ${error.message}`);
-  //         });
-  //         process.unref();
-  //         resolve(`Máy ảo ${avdName} đang được khởi động độc lập.`);
-  //       });
-  //     });
-
-  //     const results = await Promise.all(startPromises);
-  //     return results;
-  //   } catch (error) {
-  //     throw new Error(
-  //       `Lỗi khi lấy danh sách AVD hoặc khởi động AVD: ${error.message}`,
-  //     );
-  //   }
-  // }
-
   async startAllAvds(): Promise<string[]> {
     try {
       const { stdout: listOutput } = await execPromise('emulator -list-avds');
@@ -213,7 +183,7 @@ export class AndroidService {
             if (stderr) {
               throw new Error(stderr);
             }
-            await this.delay(500);
+            await this.delay(1000);
             console.log(`Output from device ${deviceId}: ${stdout}`);
           } catch (error) {}
         }
@@ -222,10 +192,6 @@ export class AndroidService {
     } else {
       return 'There are no devices running on the computer';
     }
-  }
-
-  async delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async launcherApp(body): Promise<string> {
@@ -239,36 +205,59 @@ export class AndroidService {
     }
 
     if (body?.condition === 'kill') {
-      const commands = [
-        'am force-stop org.telegram.messenger.web',
-      ];
+      const commands = ['am force-stop org.telegram.messenger.web'];
       return await this.executeCommands(listDevices, commands);
     }
-
   }
 
-  async runScripts() {
+  async runScripts(application:string,scripts: string) {
     const listDevices = await this.getActiveDevices();
-    const adbCommands: string[] = [
-      // ` input keyevent 61`,
-      // ` input keyevent 61`,
-      // ` input keyevent 61`,
-      // ` input keyevent 61`,
-      // ` input keyevent 66`,
-      // ` input text 'Moonbix'`,
-      // ` input keyevent 66`,
-      // ` input tap 300 320 `,
-      // ` input text '/start'`,
-      // ` input keyevent 61`,
-      // ` input tap 320 958 `,
-      ` input tap 636 110 `,
-      ` input text 'Moonbix'`,
-      ` input keyevent 66`,
-      ` input tap 381 369 `,
-      ` input tap 95 1180 `,
-      ` input tap 618 754 `,
-      ` input tap 357 1020 `,
-    ];
-    return await this.executeCommands(listDevices, adbCommands);
+
+    if (application === 'telegram' && scripts == 'moonbix_bot') {
+      const adbCommandsRunApplication: string[] = [
+        ` input tap 1008 115 `,
+        ` input text 'Moonbix bot'`,
+        ` input tap 538 239 `,
+        ` input tap 530 486 `,
+      ];
+      await this.executeCommands(listDevices, adbCommandsRunApplication);
+      await this.delay(4000);
+      await this.executeCommands(listDevices, [` input tap 521 1574 `]);
+      await this.delay(1000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 500 900 `]);
+      await this.delay(2000);
+      await this.executeCommands(listDevices, [` input tap 551 2006 `]);
+      return 'Scripts executed successfully';
+    }
+  }
+
+  async delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async Random(min: number, max: number) {
+    Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }
