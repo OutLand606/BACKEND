@@ -14,6 +14,8 @@ import { AuthGuard } from './auth/auth.guard';
 import { VmModule } from './vm/vm.module';
 import { RemoteDesktopModule } from './remote_desktop/remote_desktop.module';
 import { AndroidModule } from './android/android.module';
+import { PlaywrightService } from './playwright/playwright.service';
+import { PlaywrightController } from './playwright/playwright.controller';
 
 dotenv.config();
 
@@ -56,13 +58,14 @@ dotenv.config();
     RemoteDesktopModule,
     AndroidModule,
   ],
-  controllers: [],
+  controllers: [PlaywrightController],
   providers: [
     // using authentication all Controller
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
+    PlaywrightService,
   ],
   exports: [],
 })
