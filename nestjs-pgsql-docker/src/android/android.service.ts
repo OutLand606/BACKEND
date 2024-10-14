@@ -200,12 +200,13 @@ export class AndroidService {
       const commands = [
         //   `am start -a android.intent.action.VIEW -d ${body.url}`,
         'monkey -p org.telegram.messenger.web -c android.intent.category.LAUNCHER 1',
+        'monkey -p com.facebook.katana -c android.intent.category.LAUNCHER 1',
       ];
       return await this.executeCommands(listDevices, commands);
     }
 
     if (body?.condition === 'kill') {
-      const commands = ['am force-stop org.telegram.messenger.web'];
+      const commands = ['am force-stop org.telegram.messenger.web','am force-stop com.facebook.katana'];
       return await this.executeCommands(listDevices, commands);
     }
   }
