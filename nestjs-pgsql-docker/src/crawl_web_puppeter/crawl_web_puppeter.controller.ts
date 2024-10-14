@@ -19,10 +19,8 @@ export class CrawlWebPuppeterController {
 
   @Public()
   @Post('new-web')
-  async openNewWeb(
-    @Query() query: { url: string; browser: string; os: string },
-  ) {
-    const { browser, url, os } = query;
-    return this.service.openNewDtaWebFingerPrint(url);
+  async openNewWeb(@Query() query: { url: string }) {
+    const { url } = query;
+    return this.service.openAllProjectAntidetectBrowser(url);
   }
 }
