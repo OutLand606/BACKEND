@@ -52,7 +52,7 @@ export class CrawlWebPuppeterService {
   ////////////////////////////////////////////////////////////
 
   async openProjectAntidetectBrowser(url: string, quantity: number) {
-    const config: any = this.getConfig();
+    const config: any = await this.getConfig();
     const profileKeys = config.profiles;
 
     const screenWidth = width; // Available screen width
@@ -156,8 +156,8 @@ export class CrawlWebPuppeterService {
       await this.sleep(2000);
       console.log(`Đang truy cập ${url}`);
       // Giả lập nhập thông tin vào các trường (nếu cần)
-      // await page.type('#basic_user', 'qhuy.dev@gmail.com');
-      // await page.type('#basic_password', '19102003Huydev@');
+      // await page.type('#basic_user', 'outland.dev@gmail.com');
+      // await page.type('#basic_password', 'outland1231');
     } catch (err) {
       console.error(`Lỗi khi truy cập trang: ${err.message}`);
     }
@@ -178,7 +178,7 @@ export class CrawlWebPuppeterService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  getConfig() {
+  async getConfig() {
     const configPath = path.join(
       process.cwd(),
       '/src/crawl_web_puppeter/config/settings.ts',
@@ -206,6 +206,8 @@ export class CrawlWebPuppeterService {
 
   async copyChromeProfile(profileName?: string) {
     const usersPath = path.join('C:', 'Users');
+
+    // Filter out folders containing Chrome profiles
     const userDirs = fs.readdirSync(usersPath).filter((user) => {
       const userDataPath = path.join(
         usersPath,
@@ -223,7 +225,7 @@ export class CrawlWebPuppeterService {
       throw new Error('Không tìm thấy bất kỳ profile Chrome nào.');
     }
 
-    // Dùng user đầu tiên tìm thấy
+    // Use the profile of the first user found
     const chromeBasePath = path.join(
       usersPath,
       userDirs[0],
@@ -233,9 +235,10 @@ export class CrawlWebPuppeterService {
       'Chrome',
       'User Data',
     );
+
     const timestamp = dayjs().format('DDMMYYYY_HHmm');
     const newProfileName = profileName || `profile_${timestamp}`;
-    const destination = path.join(__dirname, '../../profiles', newProfileName);
+    const destination = path.join(process.cwd(), 'profiles', newProfileName);
 
     const itemsToCopy = [
       'Default',
@@ -266,12 +269,24 @@ export class CrawlWebPuppeterService {
 
         if (fs.existsSync(sourcePath)) {
           const stat = fs.lstatSync(sourcePath);
-          if (stat.isDirectory()) {
-            await fsExtra.copy(sourcePath, destPath);
-          } else {
-            await fsExtra.copyFile(sourcePath, destPath);
+
+          try {
+            if (stat.isDirectory()) {
+              // Copy the entire folder
+              await fsExtra.copy(sourcePath, destPath);
+            } else {
+              // Copy files
+              await fsExtra.copyFile(sourcePath, destPath);
+            }
+            console.log(`Đã sao chép: ${item}`);
+          } catch (error) {
+            if (error.code === 'EBUSY') {
+              console.warn(`Bỏ qua tệp đang bị khóa: ${sourcePath}`);
+            } else {
+              console.error(`Lỗi khi sao chép ${item}:`, error);
+              throw error; // Throw error if not EBUSY
+            }
           }
-          console.log(`Đã sao chép: ${item}`);
         } else {
           console.warn(`Không tìm thấy: ${item}`);
         }
