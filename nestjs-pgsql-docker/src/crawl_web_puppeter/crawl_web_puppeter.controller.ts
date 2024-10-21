@@ -23,4 +23,9 @@ export class CrawlWebPuppeterController {
     const { url } = query;
     return this.service.openAllProjectAntidetectBrowser(url);
   }
+
+  @Post('close-web-page')
+  async closeAllWebPage(@Query() query:{condition}){
+    console.log('query')
+  }
 }
