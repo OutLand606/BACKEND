@@ -3,14 +3,17 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 import { newInjectedPage } from 'fingerprint-injector';
 import { parseWithOllama } from 'helper/ai-ollama/ollama';
 import { Devices, OperatingSystems } from './enum_type/enum_type_devices';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as fsExtra from 'fs-extra';
+import dayjs from 'dayjs';
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { width, height } = require('screenz');
 const axios = require('axios');
-const path = require('path');
 
 @Injectable()
 export class CrawlWebPuppeterService {
-  private browsers: { [key: string]: Browser } = {}; 
+  private browsers: { [key: string]: Browser } = {};
   async crawlDtaWebFingerPrint(url: string, parse_description: string) {
     let data;
     const browser = await puppeteer.launch({ headless: true });
@@ -125,7 +128,7 @@ export class CrawlWebPuppeterService {
       launchOptions.args.push(`--proxy-server=${proxyOrigin}`);
     }
     const browser = await puppeteer.launch(launchOptions);
-    this.browsers[profileKey.name] = browser;// lưu phiên trình duyệt
+    this.browsers[profileKey.name] = browser; // lưu phiên trình duyệt
     const page = await browser.newPage();
     await page.setViewport({ width: windowWidth, height: windowHeight });
     if (profileKey.proxy) {
@@ -137,9 +140,9 @@ export class CrawlWebPuppeterService {
     }
 
     console.log(
-      `Chrome profileKey "${profileKey.name}" đang chạy với ip: ${
+      `Chrome profile "${profileKey.name}" đang chạy với ip: ${
         (await this.getIP(profileKey.proxy)) ||
-        `Chrome profileKey ${profileKey.name} Không có proxy`
+        `Chrome profile ${profileKey.name} Không có proxy`
       }`,
     );
 
@@ -184,7 +187,8 @@ export class CrawlWebPuppeterService {
   }
 
   async closeProfile(profileNames: string[]) {
-    const namesToClose = profileNames.length > 0 ? profileNames : Object.keys(this.browsers);
+    const namesToClose =
+      profileNames.length > 0 ? profileNames : Object.keys(this.browsers);
 
     namesToClose.forEach(async (name) => {
       const browser = this.browsers[name];
@@ -193,8 +197,91 @@ export class CrawlWebPuppeterService {
         delete this.browsers[name];
         console.log(`Đã đóng profile: ${name}`);
       } else {
-        console.log(`Profile "${name}" không có phiên trình duyệt nào đang chạy.`);
+        console.log(
+          `Profile "${name}" không có phiên trình duyệt nào đang chạy.`,
+        );
       }
     });
+  }
+
+  async copyChromeProfile(profileName?: string) {
+    const usersPath = path.join('C:', 'Users');
+    const userDirs = fs.readdirSync(usersPath).filter((user) => {
+      const userDataPath = path.join(
+        usersPath,
+        user,
+        'AppData',
+        'Local',
+        'Google',
+        'Chrome',
+        'User Data',
+      );
+      return fs.existsSync(userDataPath);
+    });
+
+    if (userDirs.length === 0) {
+      throw new Error('Không tìm thấy bất kỳ profile Chrome nào.');
+    }
+
+    // Dùng user đầu tiên tìm thấy
+    const chromeBasePath = path.join(
+      usersPath,
+      userDirs[0],
+      'AppData',
+      'Local',
+      'Google',
+      'Chrome',
+      'User Data',
+    );
+    const timestamp = dayjs().format('DDMMYYYY_HHmm');
+    const newProfileName = profileName || `profile_${timestamp}`;
+    const destination = path.join(__dirname, '../../profiles', newProfileName);
+
+    const itemsToCopy = [
+      'Default',
+      'GraphiteDawnCache',
+      'GrShaderCache',
+      'Safe Browsing',
+      'segmentation_platform',
+      'ShaderCache',
+      'ChromeFeatureState',
+      'DevToolsActivePort',
+      'first_party_sets.db',
+      'first_party_sets.db-journal',
+      'Last Version',
+      'Local State',
+      'RunningChromeVersion',
+      'SingletonCookie',
+      'SingletonLock',
+      'SingletonSocket',
+      'Variations',
+    ];
+
+    try {
+      await fsExtra.ensureDir(destination);
+
+      for (const item of itemsToCopy) {
+        const sourcePath = path.join(chromeBasePath, item);
+        const destPath = path.join(destination, item);
+
+        if (fs.existsSync(sourcePath)) {
+          const stat = fs.lstatSync(sourcePath);
+          if (stat.isDirectory()) {
+            await fsExtra.copy(sourcePath, destPath);
+          } else {
+            await fsExtra.copyFile(sourcePath, destPath);
+          }
+          console.log(`Đã sao chép: ${item}`);
+        } else {
+          console.warn(`Không tìm thấy: ${item}`);
+        }
+      }
+
+      console.log(`Profile được lưu vào: ${destination}`);
+      return { success: true, message: `Profile copied to ${destination}` };
+    } catch (error) {
+      console.error('Lỗi khi sao chép profile:', error);
+      throw new Error('Không thể sao chép profile.');
+    }
   }
 }
