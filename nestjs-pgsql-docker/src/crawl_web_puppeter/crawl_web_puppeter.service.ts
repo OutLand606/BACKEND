@@ -49,7 +49,6 @@ export class CrawlWebPuppeterService {
 
   async openAllProjectAntidetectBrowser(url: string) {
     const config: any = this.getConfig();
-    console.log('config', config);
     const profileKeys = Object.keys(config.profiles);
 
     const screenWidth = width; // Available screen width
@@ -110,8 +109,7 @@ export class CrawlWebPuppeterService {
     if (!profile) {
       throw new Error(`Profile "${profileKey}" không tồn tại.`);
     }
-
-    console.log('Profile:', profile);
+    
     console.log('Profile Name:', profile.name);
 
     const userDataDir = path.join(__dirname, '../../profiles', profileKey);
@@ -185,7 +183,6 @@ export class CrawlWebPuppeterService {
       process.cwd(),
       '/src/crawl_web_puppeter/config/settings.js',
     );
-    console.log('configPath', configPath);
     return require(configPath);
   }
 }
