@@ -7,7 +7,7 @@ import { Public } from 'src/auth/metadata';
 export class CrawlWebPuppeterController {
   constructor(private readonly service: CrawlWebPuppeterService) {}
 
-  // @Public()
+  @Public()
   @Post('data-web')
   async crawlDtaWeb(@Body() body: crawlWebDTO) {
     const {
@@ -19,13 +19,21 @@ export class CrawlWebPuppeterController {
 
   @Public()
   @Post('new-web')
-  async openNewWeb(@Query() query: { url: string }) {
-    const { url } = query;
-    return this.service.openAllProjectAntidetectBrowser(url);
+  async openNewWeb(@Query() query: { url: string; quantity?: string }) {
+    const { url, quantity } = query;
+    const config: any = this.service.getConfig();
+    const listProfileKeys = config.profiles.length;
+    const finalQuantity =
+      quantity && !isNaN(+quantity) ? +quantity : listProfileKeys;
+    return this.service.openProjectAntidetectBrowser(url, finalQuantity);
   }
 
+  @Public()
   @Post('close-web-page')
-  async closeAllWebPage(@Query() query:{condition}){
-    console.log('query')
+  async closeWebPage(@Query() query: { profileNames: string }) {
+    const { profileNames } = query;
+    const profilesToClose = profileNames ? profileNames.split(',') : [];
+    await this.service.closeProfile(profilesToClose);
+    return { message: 'Đã đóng các profile thành công!' };
   }
 }

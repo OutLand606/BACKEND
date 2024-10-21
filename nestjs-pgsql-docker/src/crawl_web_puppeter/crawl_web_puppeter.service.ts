@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import puppeteer, { Page } from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import { newInjectedPage } from 'fingerprint-injector';
 import { parseWithOllama } from 'helper/ai-ollama/ollama';
 import { Devices, OperatingSystems } from './enum_type/enum_type_devices';
@@ -10,6 +10,7 @@ const path = require('path');
 
 @Injectable()
 export class CrawlWebPuppeterService {
+  private browsers: { [key: string]: Browser } = {}; 
   async crawlDtaWebFingerPrint(url: string, parse_description: string) {
     let data;
     const browser = await puppeteer.launch({ headless: true });
@@ -47,19 +48,19 @@ export class CrawlWebPuppeterService {
   ////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////
 
-  async openAllProjectAntidetectBrowser(url: string) {
+  async openProjectAntidetectBrowser(url: string, quantity: number) {
     const config: any = this.getConfig();
-    const profileKeys = Object.keys(config.profiles);
+    const profileKeys = config.profiles;
 
     const screenWidth = width; // Available screen width
     const screenHeight = height; // Available screen height
-    const numProfiles = profileKeys.length;
+
     const cols = Math.floor(
-      screenWidth / (screenWidth / Math.ceil(Math.sqrt(numProfiles))),
+      screenWidth / (screenWidth / Math.ceil(Math.sqrt(quantity))),
     );
     const windowWidth = Math.floor(screenWidth / cols);
     const windowHeight = Math.floor(
-      (screenHeight - 20) / Math.ceil(numProfiles / cols),
+      (screenHeight - 20) / Math.ceil(quantity / cols),
     );
 
     const windowGap = 10;
@@ -68,7 +69,7 @@ export class CrawlWebPuppeterService {
 
     const launchPromises = []; // Collect all launch promises
 
-    for (let i = 0; i < numProfiles; i++) {
+    for (let i = 0; i < quantity; i++) {
       const profileKey = profileKeys[i];
 
       // Set window position and dimensions
@@ -103,16 +104,11 @@ export class CrawlWebPuppeterService {
   }
 
   async launchCustomBrowser(profileKey, x, y, windowWidth, windowHeight, url) {
-    const config: any = this.getConfig();
-    const profile = config.profiles[profileKey];
-
-    if (!profile) {
-      throw new Error(`Profile "${profileKey}" không tồn tại.`);
+    if (!profileKey) {
+      throw new Error(`Profile "${profileKey.name}" không tồn tại.`);
     }
-    
-    console.log('Profile Name:', profile.name);
 
-    const userDataDir = path.join(__dirname, '../../profiles', profileKey);
+    const userDataDir = path.join(__dirname, '../../profiles', profileKey.name);
     const launchOptions = {
       headless: false,
       args: [
@@ -124,25 +120,26 @@ export class CrawlWebPuppeterService {
       ],
     };
 
-    if (profile.proxy) {
-      const { origin: proxyOrigin } = new URL(profile.proxy);
+    if (profileKey.proxy) {
+      const { origin: proxyOrigin } = new URL(profileKey.proxy);
       launchOptions.args.push(`--proxy-server=${proxyOrigin}`);
     }
     const browser = await puppeteer.launch(launchOptions);
+    this.browsers[profileKey.name] = browser;// lưu phiên trình duyệt
     const page = await browser.newPage();
     await page.setViewport({ width: windowWidth, height: windowHeight });
-    if (profile.proxy) {
-      const { username, password } = new URL(profile.proxy);
+    if (profileKey.proxy) {
+      const { username, password } = new URL(profileKey.proxy);
       await page.authenticate({ username, password });
     }
-    if (profile.userAgent) {
-      await page.setUserAgent(profile.userAgent);
+    if (profileKey.userAgent) {
+      await page.setUserAgent(profileKey.userAgent);
     }
 
     console.log(
-      `Chrome profile "${profile.name}" đang chạy với ip: ${
-        (await this.getIP(profile.proxy)) ||
-        `Chrome profile ${profile.name} Không có proxy`
+      `Chrome profileKey "${profileKey.name}" đang chạy với ip: ${
+        (await this.getIP(profileKey.proxy)) ||
+        `Chrome profileKey ${profileKey.name} Không có proxy`
       }`,
     );
 
@@ -156,8 +153,8 @@ export class CrawlWebPuppeterService {
       await this.sleep(2000);
       console.log(`Đang truy cập ${url}`);
       // Giả lập nhập thông tin vào các trường (nếu cần)
-      await page.type('#basic_user', 'qhuy.dev@gmail.com');
-      await page.type('#basic_password', '19102003Huydev@');
+      // await page.type('#basic_user', 'qhuy.dev@gmail.com');
+      // await page.type('#basic_password', '19102003Huydev@');
     } catch (err) {
       console.error(`Lỗi khi truy cập trang: ${err.message}`);
     }
@@ -181,8 +178,23 @@ export class CrawlWebPuppeterService {
   getConfig() {
     const configPath = path.join(
       process.cwd(),
-      '/src/crawl_web_puppeter/config/settings.js',
+      '/src/crawl_web_puppeter/config/settings.ts',
     );
     return require(configPath);
+  }
+
+  async closeProfile(profileNames: string[]) {
+    const namesToClose = profileNames.length > 0 ? profileNames : Object.keys(this.browsers);
+
+    namesToClose.forEach(async (name) => {
+      const browser = this.browsers[name];
+      if (browser) {
+        await browser.close();
+        delete this.browsers[name];
+        console.log(`Đã đóng profile: ${name}`);
+      } else {
+        console.log(`Profile "${name}" không có phiên trình duyệt nào đang chạy.`);
+      }
+    });
   }
 }
