@@ -36,4 +36,11 @@ export class CrawlWebPuppeterController {
     await this.service.closeProfile(profilesToClose);
     return { message: 'Đã đóng các profile thành công!' };
   }
+
+  @Public()
+  @Post('create-profile-chrome')
+  async createProfileChrome(@Query() query: { profileNames: string }) {
+    const { profileNames } = query;
+    return this.service.copyChromeProfile(profileNames)
+  }
 }
