@@ -18,14 +18,14 @@ export class CrawlWebPuppeterController {
   }
 
   @Public()
-  @Post('new-web')
+  @Post('open-web-page')
   async openNewWeb(@Query() query: { url: string; quantity?: string }) {
     const { url, quantity } = query;
-    const config: any = this.service.getConfig();
+    const config: any = await this.service.getConfig();
     const listProfileKeys = config.profiles.length;
     const finalQuantity =
       quantity && !isNaN(+quantity) ? +quantity : listProfileKeys;
-    return this.service.openProjectAntidetectBrowser(url, finalQuantity);
+    return this.service.openProFileAntidetectBrowser(url, finalQuantity);
   }
 
   @Public()
@@ -41,6 +41,6 @@ export class CrawlWebPuppeterController {
   @Post('create-profile-chrome')
   async createProfileChrome(@Query() query: { profileNames: string }) {
     const { profileNames } = query;
-    return this.service.copyChromeProfile(profileNames)
+    return this.service.copyChromeProfile(profileNames);
   }
 }

@@ -51,7 +51,7 @@ export class CrawlWebPuppeterService {
   ////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////
 
-  async openProjectAntidetectBrowser(url: string, quantity: number) {
+  async openProFileAntidetectBrowser(url: string, quantity: number) {
     const config: any = await this.getConfig();
     const profileKeys = config.profiles;
 
