@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as fsExtra from 'fs-extra';
 import dayjs from 'dayjs';
+import { frogClickScript, yesCoinScript } from '../../testAutoToolAirDrop';
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { width, height } = require('screenz');
 const axios = require('axios');
@@ -128,7 +129,7 @@ export class CrawlWebPuppeterService {
       launchOptions.args.push(`--proxy-server=${proxyOrigin}`);
     }
     const browser = await puppeteer.launch(launchOptions);
-    this.browsers[profileKey.name] = browser; // lưu phiên trình duyệt
+    this.browsers[profileKey.name] = browser; // session browser
     const page = await browser.newPage();
     await page.setViewport({ width: windowWidth, height: windowHeight });
     if (profileKey.proxy) {
@@ -297,6 +298,57 @@ export class CrawlWebPuppeterService {
     } catch (error) {
       console.error('Lỗi khi sao chép profile:', error);
       throw new Error('Không thể sao chép profile.');
+    }
+  }
+
+  /////////////////////////////////////////////////
+  /////////////////////////////////////////////////
+
+  async runScriptOnProfile(profileNames: string, scriptsName: string) {
+    const browser = this.browsers[profileNames];
+    console.log('profileNames', profileNames);
+    console.log('scriptsName', scriptsName);
+    console.log('browser', browser);
+
+    if (!browser) {
+      throw new Error(
+        `Không tìm thấy trình duyệt cho profile "${profileNames}"`,
+      );
+    }
+
+    const pages = await browser.pages();
+    if (pages.length === 0) {
+      throw new Error(
+        `Không có tab nào đang mở trong profile "${profileNames}"`,
+      );
+    }
+
+    const page = pages[1]; // Chạy trên tab đầu tiên
+    console.log('page', page);
+
+    try {
+      // Đảm bảo đang ở đúng trang trước khi điền thông tin
+      const currentUrl = page.url();
+      if (!currentUrl.includes('getgrass.io')) {
+        throw new Error(`Không đúng URL, hiện đang ở: ${currentUrl}`);
+      }
+
+      if (scriptsName === 'grass') {
+        await page.click('body');
+        await page.click('body');
+        await page.click('body');
+        await page.type(
+          'input[placeholder="Username or Email"]',
+          'outland.dev@gmail.com',
+        );
+        await page.type('input[placeholder="Password"]', 'outland1231');
+        await page.click('button[type="submit"]');
+        await page.click('button[type="submit"]');
+        await page.click('button[type="submit"]');
+        return;
+      }
+    } catch (err) {
+      console.error(`Lỗi khi chạy script trên profile "${profileNames}":`, err);
     }
   }
 }

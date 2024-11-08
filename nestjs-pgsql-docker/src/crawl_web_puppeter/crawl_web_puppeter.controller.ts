@@ -9,7 +9,7 @@ export class CrawlWebPuppeterController {
 
   @Public()
   @Post('data-web')
-  async crawlDtaWeb(@Body() body: crawlWebDTO) {
+  async crawlDtaWeb(@Body() body: { url: string; parse_description: string }) {
     const {
       url,
       parse_description,
@@ -19,8 +19,8 @@ export class CrawlWebPuppeterController {
 
   @Public()
   @Post('open-web-page')
-  async openNewWeb(@Query() query: { url: string; quantity?: string }) {
-    const { url, quantity } = query;
+  async openNewWeb(@Body() body: { url: string; quantity?: string }) {
+    const { url, quantity } = body;
     const config: any = await this.service.getConfig();
     const listProfileKeys = config.profiles.length;
     const finalQuantity =
@@ -42,5 +42,12 @@ export class CrawlWebPuppeterController {
   async createProfileChrome(@Query() query: { profileNames: string }) {
     const { profileNames } = query;
     return this.service.copyChromeProfile(profileNames);
+  }
+
+  @Public()
+  @Post('run-scripts-profile-chrome')
+  async runScript(@Query() query: { profileNames: string; scriptsName: any }) {
+    const { profileNames, scriptsName } = query;
+    return this.service.runScriptOnProfile(profileNames, scriptsName);
   }
 }
