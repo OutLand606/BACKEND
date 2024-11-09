@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { newInjectedPage } from 'fingerprint-injector';
 import { parseWithOllama } from 'helper/ai-ollama/ollama';
@@ -7,10 +7,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as fsExtra from 'fs-extra';
 import dayjs from 'dayjs';
-import { frogClickScript, yesCoinScript } from '../../testAutoToolAirDrop';
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { width, height } = require('screenz');
 const axios = require('axios');
+import { Readable } from 'stream';
+import * as readline from 'readline';
 
 @Injectable()
 export class CrawlWebPuppeterService {
@@ -304,51 +305,60 @@ export class CrawlWebPuppeterService {
   /////////////////////////////////////////////////
   /////////////////////////////////////////////////
 
-  async runScriptOnProfile(profileNames: string, scriptsName: string) {
-    const browser = this.browsers[profileNames];
-    console.log('profileNames', profileNames);
-    console.log('scriptsName', scriptsName);
-    console.log('browser', browser);
+  async runScriptOnProfile(profileNames: string[], scriptsName: string) {
+    const namesToRunScript =
+      profileNames.length > 0 ? profileNames : Object.keys(this.browsers);
 
-    if (!browser) {
-      throw new Error(
-        `Không tìm thấy trình duyệt cho profile "${profileNames}"`,
-      );
-    }
-
-    const pages = await browser.pages();
-    if (pages.length === 0) {
-      throw new Error(
-        `Không có tab nào đang mở trong profile "${profileNames}"`,
-      );
-    }
-
-    const page = pages[1]; // Chạy trên tab đầu tiên
-    console.log('page', page);
-
-    try {
-      // Đảm bảo đang ở đúng trang trước khi điền thông tin
-      const currentUrl = page.url();
-      if (!currentUrl.includes('getgrass.io')) {
-        throw new Error(`Không đúng URL, hiện đang ở: ${currentUrl}`);
+    namesToRunScript.forEach(async (name) => {
+      const browser = this.browsers[name];
+      const pages = await browser.pages();
+      if (pages) {
+        await pages[0].close();
+        const page = pages[1];
+        try {
+          if (scriptsName === 'loginGrass') {
+            const currentUrl = page.url();
+            if (!currentUrl.includes('getgrass.io'))
+              throw new Error(`Không đúng URL, hiện đang ở: ${currentUrl}`);
+            await page.click('body');
+            await this.sleep(1000);
+            await page.type(
+              'input[placeholder="Username or Email"]',
+              'outland.dev@gmail.com',
+            );
+            await page.type('input[placeholder="Password"]', 'outland1231');
+            await this.sleep(1000);
+            await page.click('button[type="submit"]');
+            return;
+          }
+        } catch (err) {
+          console.error(`Lỗi khi chạy script trên profile "${name}":`, err);
+        }
       }
+    });
+  }
 
-      if (scriptsName === 'grass') {
-        await page.click('body');
-        await page.click('body');
-        await page.click('body');
-        await page.type(
-          'input[placeholder="Username or Email"]',
-          'outland.dev@gmail.com',
-        );
-        await page.type('input[placeholder="Password"]', 'outland1231');
-        await page.click('button[type="submit"]');
-        await page.click('button[type="submit"]');
-        await page.click('button[type="submit"]');
-        return;
-      }
-    } catch (err) {
-      console.error(`Lỗi khi chạy script trên profile "${profileNames}":`, err);
+  async importFileTxt(file) {
+    if (!file) {
+      throw new BadRequestException('File là bắt buộc!');
     }
+    const fileStream = Readable.from(file.buffer);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+
+    const lines: string[] = [];
+
+    for await (const line of rl) {
+      lines.push(line.trim());
+    }
+    const jsonFilename = path.basename(file.originalname, '.txt') + '.json';
+
+    // const jsonPath = path.join(__dirname, '../../uploads', jsonFilename); // Đường dẫn để lưu file tại dist build thực thi
+    const jsonPath = path.join(process.cwd(), 'uploads', jsonFilename); // Đường dẫn để lưu file tại dự án gốc
+    fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify(lines, null, 2));
+    return jsonPath;
   }
 }
