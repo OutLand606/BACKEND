@@ -17,6 +17,8 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "resolveJsonModule": true,  // Bật hỗ trợ import JSON
+    "moduleResolution": "node"  // Cấu hình kiểu module resolution cho Node.js
   }
 }

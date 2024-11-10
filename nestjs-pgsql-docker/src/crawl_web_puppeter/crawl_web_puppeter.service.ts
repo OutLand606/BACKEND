@@ -12,6 +12,8 @@ const { width, height } = require('screenz');
 const axios = require('axios');
 import { Readable } from 'stream';
 import * as readline from 'readline';
+import proxies from './config/proxies.json';
+import userAgents from './config/userAgents.json';
 
 @Injectable()
 export class CrawlWebPuppeterService {
@@ -54,27 +56,41 @@ export class CrawlWebPuppeterService {
   ////////////////////////////////////////////////////////////
 
   async openProFileAntidetectBrowser(url: string, quantity: number) {
-    const config: any = await this.getConfig();
-    const profileKeys = config.profiles;
+    // Read Profile Chrome
+    const profilesDir = path.join(__dirname, '../../../profiles');
+    const profileFolders = fs.readdirSync(profilesDir).filter((file) => {
+      return fs.statSync(path.join(profilesDir, file)).isDirectory(); // get folder
+    });
+
+    // config data information
+    const profileKeys = profileFolders.map((folderName, index) => ({
+      id: (index + 1).toString(),
+      name: folderName, // Sử dụng tên folder làm name
+      proxy: this.getRandomElement(proxies),
+      userAgent: this.getRandomElement(userAgents),
+    }));
+
+    const finalQuantity =
+      quantity && !isNaN(+quantity) ? +quantity : profileKeys.length;
 
     const screenWidth = width; // Available screen width
     const screenHeight = height; // Available screen height
 
     const cols = Math.floor(
-      screenWidth / (screenWidth / Math.ceil(Math.sqrt(quantity))),
+      screenWidth / (screenWidth / Math.ceil(Math.sqrt(finalQuantity))),
     );
     const windowWidth = Math.floor(screenWidth / cols);
     const windowHeight = Math.floor(
-      (screenHeight - 20) / Math.ceil(quantity / cols),
+      (screenHeight - 30) / Math.ceil(finalQuantity / cols),
     );
 
-    const windowGap = 10;
+    const windowGap = 5;
     let xPosition = 0;
     let yPosition = 0;
 
     const launchPromises = []; // Collect all launch promises
 
-    for (let i = 0; i < quantity; i++) {
+    for (let i = 0; i < finalQuantity; i++) {
       const profileKey = profileKeys[i];
 
       // Set window position and dimensions
@@ -163,29 +179,6 @@ export class CrawlWebPuppeterService {
     } catch (err) {
       console.error(`Lỗi khi truy cập trang: ${err.message}`);
     }
-  }
-
-  async getIP(proxy) {
-    try {
-      const response = await axios.get('https://api.ipify.org?format=json', {
-        httpsAgent: new HttpsProxyAgent(proxy),
-      });
-      return response.data.ip;
-    } catch (error) {
-      console.log('Lỗi khi lấy IP:', error.message);
-    }
-  }
-
-  async sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  async getConfig() {
-    const configPath = path.join(
-      process.cwd(),
-      '/src/crawl_web_puppeter/config/settings.ts',
-    );
-    return require(configPath);
   }
 
   async closeProfile(profileNames: string[]) {
@@ -302,9 +295,6 @@ export class CrawlWebPuppeterService {
     }
   }
 
-  /////////////////////////////////////////////////
-  /////////////////////////////////////////////////
-
   async runScriptOnProfile(profileNames: string[], scriptsName: string) {
     const namesToRunScript =
       profileNames.length > 0 ? profileNames : Object.keys(this.browsers);
@@ -360,5 +350,25 @@ export class CrawlWebPuppeterService {
     fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
     fs.writeFileSync(jsonPath, JSON.stringify(lines, null, 2));
     return jsonPath;
+  }
+
+  /// Scripts using all
+  getRandomElement(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  async getIP(proxy) {
+    try {
+      const response = await axios.get('https://api.ipify.org?format=json', {
+        httpsAgent: new HttpsProxyAgent(proxy),
+      });
+      return response.data.ip;
+    } catch (error) {
+      console.log('Lỗi khi lấy IP:', error.message);
+    }
+  }
+
+  async sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

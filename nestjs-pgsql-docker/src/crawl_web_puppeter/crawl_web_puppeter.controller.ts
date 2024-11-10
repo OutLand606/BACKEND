@@ -34,11 +34,7 @@ export class CrawlWebPuppeterController {
   @Post('open-web-page')
   async openNewWeb(@Body() body: { url: string; quantity?: string }) {
     const { url, quantity } = body;
-    const config: any = await this.service.getConfig();
-    const listProfileKeys = config.profiles.length;
-    const finalQuantity =
-      quantity && !isNaN(+quantity) ? +quantity : listProfileKeys;
-    return this.service.openProFileAntidetectBrowser(url, finalQuantity);
+    return this.service.openProFileAntidetectBrowser(url, +quantity);
   }
 
   @Public()
