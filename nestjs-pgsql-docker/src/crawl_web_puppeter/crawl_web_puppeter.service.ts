@@ -54,158 +54,6 @@ export class CrawlWebPuppeterService {
 
   ////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////
-
-  // async openProFileAntidetectBrowser(url: string, quantity: number) {
-  //   const profiles = this.loadProfiles();
-  //   const finalQuantity = Math.min(
-  //     quantity || profiles.length,
-  //     profiles.length,
-  //   );
-  //   const { windowWidth, windowHeight, cols } =
-  //     this.calculateWindowLayout(finalQuantity);
-
-  //   await Promise.all(
-  //     this.createLaunchPromises(
-  //       profiles.slice(0, finalQuantity),
-  //       url,
-  //       windowWidth,
-  //       windowHeight,
-  //       cols,
-  //     ),
-  //   );
-  // }
-
-  // // Load and format profiles
-  // private loadProfiles() {
-  //   const profilesDir = path.resolve(__dirname, '../../../profiles');
-  //   return fs
-  //     .readdirSync(profilesDir)
-  //     .filter((file) => fs.statSync(path.join(profilesDir, file)).isDirectory())
-  //     .map((folderName, index) => ({
-  //       id: (index + 1).toString(),
-  //       name: folderName,
-  //       proxy: this.getRandomElement(proxies),
-  //       userAgent: this.getRandomElement(userAgents),
-  //     }));
-  // }
-
-  // // Calculate layout parameters
-  // private calculateWindowLayout(quantity: number) {
-  //   const GAP = 5;
-  //   const SCREEN_WIDTH = width;
-  //   const SCREEN_HEIGHT = height;
-  //   const cols = Math.ceil(Math.sqrt(quantity));
-  //   const windowWidth = Math.floor(SCREEN_WIDTH / cols);
-  //   const rows = Math.ceil(quantity / cols);
-  //   const windowHeight = Math.floor((SCREEN_HEIGHT - GAP * (rows - 1)) / rows);
-
-  //   return { windowWidth, windowHeight, cols, GAP };
-  // }
-
-  // // Create launch promises with calculated positions
-  // private createLaunchPromises(
-  //   profiles: Array<any>,
-  //   url: string,
-  //   windowWidth: number,
-  //   windowHeight: number,
-  //   cols: number,
-  // ) {
-  //   return profiles.map((profile, index) => {
-  //     const { x, y } = this.calculatePosition(
-  //       index,
-  //       windowWidth,
-  //       windowHeight,
-  //       cols,
-  //     );
-  //     return this.isWithinScreenBounds(y, windowHeight)
-  //       ? this.launchCustomBrowser(
-  //           profile,
-  //           x,
-  //           y,
-  //           windowWidth,
-  //           windowHeight,
-  //           url,
-  //         )
-  //       : this.handleOutOfBounds(profile);
-  //   });
-  // }
-
-  // // Calculate window position
-  // private calculatePosition(
-  //   index: number,
-  //   windowWidth: number,
-  //   windowHeight: number,
-  //   cols: number,
-  // ) {
-  //   const x = (index % cols) * (windowWidth + 5);
-  //   const y = Math.floor(index / cols) * (windowHeight + 5);
-  //   return { x, y };
-  // }
-
-  // // Check if the window fits on screen
-  // private isWithinScreenBounds(yPosition: number, windowHeight: number) {
-  //   return yPosition + windowHeight <= height;
-  // }
-
-  // // Handle cases where screen space is insufficient
-  // private handleOutOfBounds(profile: any) {
-  //   console.log(
-  //     `Cannot open profile "${profile.name}" due to insufficient screen space.`,
-  //   );
-  //   return Promise.resolve();
-  // }
-
-  // async launchCustomBrowser(profileKey, x, y, windowWidth, windowHeight, url) {
-  //   if (!profileKey) {
-  //     throw new Error(`Profile "${profileKey.name}" không tồn tại.`);
-  //   }
-
-  //   const userDataDir = path.join(__dirname, '../../profiles', profileKey.name);
-  //   const launchOptions = {
-  //     headless: false,
-  //     args: [
-  //       '--hide-crash-restore-bubble',
-  //       `--user-data-dir=${userDataDir}`,
-  //       `--window-size=${windowWidth},${windowHeight}`,
-  //       `--window-position=${x},${y}`,
-  //       '--no-sandbox',
-  //     ],
-  //   };
-
-  //   if (profileKey.proxy) {
-  //     const { origin: proxyOrigin } = new URL(profileKey.proxy);
-  //     launchOptions.args.push(`--proxy-server=${proxyOrigin}`);
-  //   }
-  //   const browser = await puppeteer.launch(launchOptions);
-  //   this.browsers[profileKey.name] = browser; // session browser
-  //   const page = await browser.newPage();
-  //   await page.setViewport({ width: windowWidth, height: windowHeight });
-  //   if (profileKey.proxy) {
-  //     const { username, password } = new URL(profileKey.proxy);
-  //     await page.authenticate({ username, password });
-  //   }
-  //   if (profileKey.userAgent) {
-  //     await page.setUserAgent(profileKey.userAgent);
-  //   }
-
-  //   console.log(
-  //     `Chrome profile "${profileKey.name}" đang chạy với ip: ${
-  //       (await this.getIP(profileKey.proxy)) ||
-  //       `Chrome profile ${profileKey.name} Không có proxy`
-  //     }`,
-  //   );
-
-  //   // go to page URL
-  //   try {
-  //     await page.goto(url, { waitUntil: 'networkidle2' });
-  //     await this.sleep(2000);
-  //     console.log(`Đang truy cập ${url}`);
-  //   } catch (err) {
-  //     console.error(`Lỗi khi truy cập trang: ${err.message}`);
-  //   }
-  //   return browser;
-  // }
-
   async openProFileAntidetectBrowser(url: string, quantity: number) {
     const profiles = this.loadProfiles();
     const finalQuantity = Math.min(
@@ -264,45 +112,6 @@ export class CrawlWebPuppeterService {
     return { windowWidth, windowHeight, cols };
   }
 
-  // async launchBrowserInstance(profile, x, y, windowWidth, windowHeight, url) {
-  //   const userDataDir = path.join(__dirname, '../../profiles', profile.name);
-  //   const args = [
-  //     '--hide-crash-restore-bubble',
-  //     `--user-data-dir=${userDataDir}`,
-  //     `--window-size=${windowWidth},${windowHeight}`,
-  //     `--window-position=${x},${y}`,
-  //     '--no-sandbox',
-  //   ];
-
-  //   if (profile.proxy)
-  //     args.push(`--proxy-server=${new URL(profile.proxy).origin}`);
-
-  //   try {
-  //     const browser = await puppeteer.launch({ headless: false, args });
-  //     this.browsers[profile.name] = browser;
-
-  //     const page = await browser.newPage();
-  //     await page.setViewport({ width: windowWidth, height: windowHeight });
-
-  //     if (profile.proxy) {
-  //       const { username, password } = new URL(profile.proxy);
-  //       await page.authenticate({ username, password });
-  //     }
-  //     if (profile.userAgent) await page.setUserAgent(profile.userAgent);
-
-  //     console.log(
-  //       `Chrome profile "${profile.name}" đang chạy với IP: ${(await this.getIP(profile.proxy)) || 'Không có proxy'}`,
-  //     );
-
-  //     await page.goto(url, { waitUntil: 'networkidle2' });
-  //     console.log(`Đang truy cập ${url}`);
-  //   } catch (err) {
-  //     console.error(
-  //       `Lỗi khi khởi động browser cho profile "${profile.name}": ${err.message}`,
-  //     );
-  //   }
-  // }
-
   async launchBrowserInstance(profile, x, y, windowWidth, windowHeight, url) {
     const userDataDir = path.join(__dirname, '../../profiles', profile.name);
 
@@ -321,7 +130,7 @@ export class CrawlWebPuppeterService {
     }
 
     // Kiểm tra và tải extension từ thư mục extensions gốc nếu chưa có trong userDataDir
-    const extensionsDir = path.join(process.cwd(), 'profiles/extensions');
+    const extensionsDir = path.join(process.cwd(), 'extensions');
 
     // Đọc tất cả các tệp .crx trong thư mục extensions
     const extensionFiles = fs.readdirSync(extensionsDir).filter((file) => {
@@ -496,7 +305,6 @@ export class CrawlWebPuppeterService {
 
       console.log('pages', pages);
       if (pages) {
-        await pages[0].close();
         const page = pages[1];
         try {
           if (scriptsName === 'loginGrass') {
