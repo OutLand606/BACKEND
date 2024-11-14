@@ -124,28 +124,26 @@ export class CrawlWebPuppeterService {
       '--no-sandbox',
     ];
 
-    // Nếu có proxy, thêm cờ proxy vào
-    if (profile.proxy) {
-      args.push(`--proxy-server=${new URL(profile.proxy).origin}`);
-    }
-
     // Kiểm tra và tải extension từ thư mục extensions gốc nếu chưa có trong userDataDir
     const extensionsDir = path.join(process.cwd(), 'extensions');
 
-    // Đọc tất cả các tệp .crx trong thư mục extensions
-    const extensionFiles = fs.readdirSync(extensionsDir).filter((file) => {
-      const ext = path.extname(file);
-      return ext === '.crx'; // Chỉ lọc tệp .crx
+    // Lọc ra các thư mục con trong thư mục extensions
+    const extensionDirs = fs.readdirSync(extensionsDir).filter((file) => {
+      const fullPath = path.join(extensionsDir, file);
+      return fs.statSync(fullPath).isDirectory(); // Chỉ chọn các thư mục
     });
 
-    // Nếu có các tệp .crx, thêm chúng vào args
-    if (extensionFiles.length > 0) {
-      const extensionPaths = extensionFiles.map((file) =>
-        path.join(extensionsDir, file),
+    // Nếu có các thư mục extension, thêm chúng vào args
+    if (extensionDirs.length > 0) {
+      const extensionPaths = extensionDirs.map((dir) =>
+        path.join(extensionsDir, dir),
       );
       const extensionPathsString = extensionPaths.join(',');
-      args.push(`--install-extension=${extensionPathsString}`);
-      console.log(`Đang cài đặt extension: ${extensionPaths.join(', ')}`);
+      args.push(`--disable-extensions-except=${extensionPathsString}`);
+      args.push(`--load-extension=${extensionPathsString}`);
+      console.log(
+        `Đang cài đặt extension từ các thư mục: ${extensionPaths.join(', ')}`,
+      );
     }
 
     try {
