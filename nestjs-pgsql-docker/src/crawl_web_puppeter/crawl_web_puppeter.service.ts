@@ -300,31 +300,34 @@ export class CrawlWebPuppeterService {
     namesToRunScript.forEach(async (name) => {
       const browser = this.browsers[name];
       const pages = await browser.pages();
-
-      console.log('pages', pages);
       if (pages) {
         const page = pages[1];
         try {
           if (scriptsName === 'loginGrass') {
-            const currentUrl = page.url();
-            if (!currentUrl.includes('getgrass.io'))
-              throw new Error(`Không đúng URL, hiện đang ở: ${currentUrl}`);
-            await page.click('body');
-            await this.sleep(1000);
-            await page.type(
-              'input[placeholder="Username or Email"]',
-              'outland.dev@gmail.com',
-            );
-            await page.type('input[placeholder="Password"]', 'outland1231');
-            await this.sleep(1000);
-            await page.click('button[type="submit"]');
-            return;
+            await this.loginGrass(page);
           }
         } catch (err) {
           console.error(`Lỗi khi chạy script trên profile "${name}":`, err);
         }
       }
     });
+  }
+
+  async loginGrass(page) {
+    try {
+      await page.click('body');
+      await this.sleep(1000);
+      await page.type(
+        'input[placeholder="Username or Email"]',
+        'outland.dev@gmail.com',
+      );
+      await page.type('input[placeholder="Password"]', 'outland1231');
+      await this.sleep(1000);
+      await page.click('button[type="submit"]');
+      console.log('Đã đăng nhập vào Grass');
+    } catch (err) {
+      console.error('Lỗi khi đăng nhập vào Grass:', err);
+    }
   }
 
   async importFileTxt(file) {
