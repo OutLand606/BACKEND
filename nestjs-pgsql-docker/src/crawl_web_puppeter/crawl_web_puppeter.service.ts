@@ -87,7 +87,7 @@ export class CrawlWebPuppeterService {
     return await Promise.all(launchPromises);
   }
 
-  // Tải và định dạng profile từ thư mục
+  // Load and declare data profile
   private loadProfiles() {
     const profilesDir = path.resolve(__dirname, '../../../profiles');
     return fs
@@ -101,7 +101,7 @@ export class CrawlWebPuppeterService {
       }));
   }
 
-  // Tính toán layout cửa sổ trình duyệt
+  // windows Size
   private calculateWindowLayout(quantity: number) {
     const SCREEN_WIDTH = width;
     const SCREEN_HEIGHT = height;
@@ -115,7 +115,6 @@ export class CrawlWebPuppeterService {
   async launchBrowserInstance(profile, x, y, windowWidth, windowHeight, url) {
     const userDataDir = path.join(__dirname, '../../profiles', profile.name);
 
-    // Kiểm tra thư mục extensions trong userDataDir (không cần kiểm tra có Extensions nữa)
     const args = [
       '--hide-crash-restore-bubble',
       `--user-data-dir=${userDataDir}`,
@@ -124,21 +123,21 @@ export class CrawlWebPuppeterService {
       '--no-sandbox',
     ];
 
-    // Nếu có proxy, thêm cờ proxy vào
+    // Check and inner proxy to args
     if (profile.proxy) {
       args.push(`--proxy-server=${new URL(profile.proxy).origin}`);
     }
 
-    // Kiểm tra và tải extension từ thư mục extensions gốc nếu chưa có trong userDataDir
+    // Check extension in folder
     const extensionsDir = path.join(process.cwd(), 'extensions');
 
-    // Lọc ra các thư mục con trong thư mục extensions
+    // Check list extension
     const extensionDirs = fs.readdirSync(extensionsDir).filter((file) => {
       const fullPath = path.join(extensionsDir, file);
       return fs.statSync(fullPath).isDirectory(); // Chỉ chọn các thư mục
     });
 
-    // Nếu có các thư mục extension, thêm chúng vào args
+    // inner args
     if (extensionDirs.length > 0) {
       const extensionPaths = extensionDirs.map((dir) =>
         path.join(extensionsDir, dir),
@@ -152,7 +151,7 @@ export class CrawlWebPuppeterService {
     }
 
     try {
-      // Khởi động trình duyệt với các args đã cấu hình
+      // Start browser
       const browser = await puppeteer.launch({ headless: false, args });
       const nameProfile = profile.name;
       this.browsers[nameProfile] = browser;
@@ -160,13 +159,13 @@ export class CrawlWebPuppeterService {
       const page = await browser.newPage();
       await page.setViewport({ width: windowWidth, height: windowHeight });
 
-      // Xử lý proxy nếu có
+      // Login proxy
       if (profile.proxy) {
         const { username, password } = new URL(profile.proxy);
         await page.authenticate({ username, password });
       }
 
-      // Thiết lập user agent nếu có
+      // Set UserAgent
       if (profile.userAgent) {
         await page.setUserAgent(profile.userAgent);
       }
@@ -175,7 +174,7 @@ export class CrawlWebPuppeterService {
         `Chrome profile "${profile.name}" đang chạy với IP: ${(await this.getIP(profile.proxy)) || 'Không có proxy'}`,
       );
 
-      // Mở trang URL
+      // Goto URL
       await page.goto(url, { waitUntil: 'networkidle2' });
       console.log(`Đang truy cập ${url}`);
       return { nameProfile, browser, page };
@@ -321,6 +320,32 @@ export class CrawlWebPuppeterService {
     });
   }
 
+  async importFileTxt(file) {
+    if (!file) {
+      throw new BadRequestException('File là bắt buộc!');
+    }
+    const fileStream = Readable.from(file.buffer);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+
+    const lines: string[] = [];
+
+    for await (const line of rl) {
+      lines.push(line.trim());
+    }
+    const jsonFilename = path.basename(file.originalname, '.txt') + '.json';
+
+    // const jsonPath = path.join(__dirname, '../../uploads', jsonFilename); // Đường dẫn để lưu file tại dist build thực thi
+    const jsonPath = path.join(process.cwd(), 'uploads', jsonFilename); // Đường dẫn để lưu file tại dự án gốc
+    fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify(lines, null, 2));
+    return jsonPath;
+  }
+
+
+  // Scripts using in page
   async loginGrass(page) {
     try {
       await page.click('body');
@@ -352,31 +377,7 @@ export class CrawlWebPuppeterService {
     console.log('Đã đăng nhập vào extension.');
   }
 
-  async importFileTxt(file) {
-    if (!file) {
-      throw new BadRequestException('File là bắt buộc!');
-    }
-    const fileStream = Readable.from(file.buffer);
-    const rl = readline.createInterface({
-      input: fileStream,
-      crlfDelay: Infinity,
-    });
-
-    const lines: string[] = [];
-
-    for await (const line of rl) {
-      lines.push(line.trim());
-    }
-    const jsonFilename = path.basename(file.originalname, '.txt') + '.json';
-
-    // const jsonPath = path.join(__dirname, '../../uploads', jsonFilename); // Đường dẫn để lưu file tại dist build thực thi
-    const jsonPath = path.join(process.cwd(), 'uploads', jsonFilename); // Đường dẫn để lưu file tại dự án gốc
-    fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
-    fs.writeFileSync(jsonPath, JSON.stringify(lines, null, 2));
-    return jsonPath;
-  }
-
-  /// Scripts using all
+  /// Scripts using all service
   getRandomElement(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   }
