@@ -84,7 +84,7 @@ export class CrawlWebPuppeterService {
         );
       });
 
-    await Promise.all(launchPromises);
+    return await Promise.all(launchPromises);
   }
 
   // Tải và định dạng profile từ thư mục
@@ -124,6 +124,11 @@ export class CrawlWebPuppeterService {
       '--no-sandbox',
     ];
 
+    // Nếu có proxy, thêm cờ proxy vào
+    if (profile.proxy) {
+      args.push(`--proxy-server=${new URL(profile.proxy).origin}`);
+    }
+
     // Kiểm tra và tải extension từ thư mục extensions gốc nếu chưa có trong userDataDir
     const extensionsDir = path.join(process.cwd(), 'extensions');
 
@@ -149,7 +154,8 @@ export class CrawlWebPuppeterService {
     try {
       // Khởi động trình duyệt với các args đã cấu hình
       const browser = await puppeteer.launch({ headless: false, args });
-      this.browsers[profile.name] = browser;
+      const nameProfile = profile.name;
+      this.browsers[nameProfile] = browser;
 
       const page = await browser.newPage();
       await page.setViewport({ width: windowWidth, height: windowHeight });
@@ -172,6 +178,7 @@ export class CrawlWebPuppeterService {
       // Mở trang URL
       await page.goto(url, { waitUntil: 'networkidle2' });
       console.log(`Đang truy cập ${url}`);
+      return { nameProfile, browser, page };
     } catch (err) {
       console.error(
         `Lỗi khi khởi động trình duyệt cho profile "${profile.name}": ${err.message}`,
@@ -305,6 +312,7 @@ export class CrawlWebPuppeterService {
         try {
           if (scriptsName === 'loginGrass') {
             await this.loginGrass(page);
+            // await this.getExtension(browser);
           }
         } catch (err) {
           console.error(`Lỗi khi chạy script trên profile "${name}":`, err);
@@ -328,6 +336,20 @@ export class CrawlWebPuppeterService {
     } catch (err) {
       console.error('Lỗi khi đăng nhập vào Grass:', err);
     }
+  }
+
+  async getExtension(browser) {
+    const page = await browser.newPage(); // Tạo một tab mới
+    const extensionId = 'ilehaonighjijnmpnagapkhpcdbhclfg'; // ID của extension Grass.io
+    const extensionURL = `chrome-extension://${extensionId}/index.html`; // URL của popup extension;
+    await page.goto(extensionURL); // Mở giao diện popup của extension
+    await this.sleep(1000);
+    await page.click('button[type="button"]'); // Nhấn nút submit
+    await this.sleep(1000);
+    await page.type('input[type="text"]', 'username'); // Điền thông tin vào trường username
+    await page.type('input[type="password"]', 'password'); // Điền thông tin vào trường password
+    await page.click('button[type="submit"]'); // Nhấn nút submit
+    console.log('Đã đăng nhập vào extension.');
   }
 
   async importFileTxt(file) {
