@@ -310,7 +310,11 @@ export class CrawlWebPuppeterService {
         const page = pages[1];
         try {
           if (scriptsName === 'loginGrass') {
-            await this.loginGrass(page);
+            return await this.loginGrass(page);
+            // await this.getExtension(browser);
+          }
+          if (scriptsName === 'nodePay') {
+            return await this.nodePay(page);
             // await this.getExtension(browser);
           }
         } catch (err) {
@@ -344,7 +348,6 @@ export class CrawlWebPuppeterService {
     return jsonPath;
   }
 
-
   // Scripts using in page
   async loginGrass(page) {
     try {
@@ -352,9 +355,27 @@ export class CrawlWebPuppeterService {
       await this.sleep(1000);
       await page.type(
         'input[placeholder="Username or Email"]',
-        'outland.dev@gmail.com',
+        'dichmebanga@gmail.com',
       );
-      await page.type('input[placeholder="Password"]', 'outland1231');
+      await page.type('input[placeholder="Password"]', 'Concat1233@');
+      await this.sleep(1000);
+      await page.click('button[type="submit"]');
+      console.log('Đã đăng nhập vào Grass');
+    } catch (err) {
+      console.error('Lỗi khi đăng nhập vào Grass:', err);
+    }
+  }
+
+  async nodePay(page) {
+    // cần vượt captcha cloudflare
+    try {
+      await page.click('body');
+      await this.sleep(1000);
+      await page.type(
+        'input[placeholder="Username or email"]',
+        'dichmebanga@gmail.com',
+      );
+      await page.type('input[placeholder="Password"]', 'Concat1233@');
       await this.sleep(1000);
       await page.click('button[type="submit"]');
       console.log('Đã đăng nhập vào Grass');
