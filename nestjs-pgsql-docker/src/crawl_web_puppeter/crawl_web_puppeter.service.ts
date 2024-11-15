@@ -14,6 +14,7 @@ import { Readable } from 'stream';
 import * as readline from 'readline';
 import proxies from './config/proxies.json';
 import userAgents from './config/userAgents.json';
+import { connect } from 'puppeteer-real-browser';
 
 @Injectable()
 export class CrawlWebPuppeterService {
@@ -151,12 +152,55 @@ export class CrawlWebPuppeterService {
     }
 
     try {
-      // Start browser
-      const browser = await puppeteer.launch({ headless: false, args });
-      const nameProfile = profile.name;
-      this.browsers[nameProfile] = browser;
+      // // Start browser
+      // const browser = await puppeteer.launch({ headless: false, args });
+      // const nameProfile = profile.name;
+      // this.browsers[nameProfile] = browser;
 
-      const page = await browser.newPage();
+      // const page = await browser.newPage();
+      // await page.setViewport({ width: windowWidth, height: windowHeight });
+
+      // // Login proxy
+      // if (profile.proxy) {
+      //   const { username, password } = new URL(profile.proxy);
+      //   await page.authenticate({ username, password });
+      // }
+
+      // // Set UserAgent
+      // if (profile.userAgent) {
+      //   await page.setUserAgent(profile.userAgent);
+      // }
+
+      // console.log(
+      //   `Chrome profile "${profile.name}" đang chạy với IP: ${(await this.getIP(profile.proxy)) || 'Không có proxy'}`,
+      // );
+
+      // // Goto URL
+      // await page.goto(url, { waitUntil: 'networkidle2' });
+      // console.log(`Đang truy cập ${url}`);
+
+      /////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////
+
+      const { browser, page } = await connect({
+        headless: false,
+        args: args,
+        customConfig: {},
+        turnstile: true,
+        connectOption: {},
+        disableXvfb: false,
+        ignoreAllFlags: false,
+        // proxy: {
+        //   host: '13t9mmnc1.proxy7773.cloud',
+        //   port: '3130',
+        //   username: 'fqn38wjh',
+        //   password: 'OPMDNNuyy7xX',
+        // } as any,
+      });
+
+      const nameProfile = profile.name;
+      this.browsers[nameProfile] = browser as any;
+
       await page.setViewport({ width: windowWidth, height: windowHeight });
 
       // Login proxy
@@ -177,6 +221,7 @@ export class CrawlWebPuppeterService {
       // Goto URL
       await page.goto(url, { waitUntil: 'networkidle2' });
       console.log(`Đang truy cập ${url}`);
+
       return { nameProfile, browser, page };
     } catch (err) {
       console.error(
@@ -307,14 +352,13 @@ export class CrawlWebPuppeterService {
       const browser = this.browsers[name];
       const pages = await browser.pages();
       if (pages) {
-        const page = pages[1];
         try {
           if (scriptsName === 'loginGrass') {
-            return await this.loginGrass(page);
+            return await this.loginGrass(pages);
             // await this.getExtension(browser);
           }
           if (scriptsName === 'nodePay') {
-            return await this.nodePay(page);
+            return await this.nodePay(pages);
             // await this.getExtension(browser);
           }
         } catch (err) {
@@ -349,7 +393,8 @@ export class CrawlWebPuppeterService {
   }
 
   // Scripts using in page
-  async loginGrass(page) {
+  async loginGrass(pages) {
+    const page = pages[1];
     try {
       await page.click('body');
       await this.sleep(1000);
@@ -366,10 +411,11 @@ export class CrawlWebPuppeterService {
     }
   }
 
-  async nodePay(page) {
+  async nodePay(pages) {
+    const page = pages[0];
     // cần vượt captcha cloudflare
     try {
-      await page.click('body');
+      // await page.click('body');
       await this.sleep(1000);
       await page.type(
         'input[placeholder="Username or email"]',
