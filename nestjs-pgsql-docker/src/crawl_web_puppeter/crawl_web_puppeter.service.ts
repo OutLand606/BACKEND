@@ -85,7 +85,8 @@ export class CrawlWebPuppeterService {
         );
       });
 
-    return await Promise.all(launchPromises);
+    await Promise.all(launchPromises);
+    return this.browsers;
   }
 
   // Load and declare data profile
@@ -182,6 +183,7 @@ export class CrawlWebPuppeterService {
       /////////////////////////////////////////////////////
       /////////////////////////////////////////////////////
 
+      // ADD BUYPASS CLOUDFLARE
       const { browser, page } = await connect({
         headless: false,
         args: args,
@@ -198,7 +200,8 @@ export class CrawlWebPuppeterService {
         // } as any,
       });
 
-      const nameProfile = profile.name;
+      const timestamp = dayjs().format('YYYYMMDD_HHmmss'); // format: 20241115_143507
+      const nameProfile = `${profile.name}_${timestamp}`;
       this.browsers[nameProfile] = browser as any;
 
       await page.setViewport({ width: windowWidth, height: windowHeight });
@@ -394,18 +397,23 @@ export class CrawlWebPuppeterService {
 
   // Scripts using in page
   async loginGrass(pages) {
-    const page = pages[1];
+    const page = pages[0];
+
     try {
-      await page.click('body');
+      console.log('Bắt đầu quá trình đăng nhập vào Grass');
       await this.sleep(1000);
-      await page.type(
-        'input[placeholder="Username or Email"]',
-        'dichmebanga@gmail.com',
-      );
-      await page.type('input[placeholder="Password"]', 'Concat1233@');
-      await this.sleep(1000);
+
+      const usernameSelector = 'input[placeholder="Username or Email"]';
+      await this.clearAndType(page, usernameSelector, 'dichmebanga@gmail.com');
+
+      const passwordSelector = 'input[placeholder="Password"]';
+      await this.clearAndType(page, passwordSelector, 'Concat1233@');
+
+      await this.sleep(500);
       await page.click('button[type="submit"]');
-      console.log('Đã đăng nhập vào Grass');
+
+      console.log('Đăng nhập xong, bắt đầu vòng lặp reload trang...');
+      await this.startReloadLoop(page, 7200000);
     } catch (err) {
       console.error('Lỗi khi đăng nhập vào Grass:', err);
     }
@@ -413,20 +421,25 @@ export class CrawlWebPuppeterService {
 
   async nodePay(pages) {
     const page = pages[0];
-    // cần vượt captcha cloudflare
+
     try {
-      // await page.click('body');
+      console.log('Bắt đầu quá trình đăng nhập vào NodePay');
+
       await this.sleep(1000);
-      await page.type(
-        'input[placeholder="Username or email"]',
-        'dichmebanga@gmail.com',
-      );
-      await page.type('input[placeholder="Password"]', 'Concat1233@');
-      await this.sleep(1000);
+
+      const usernameSelector = 'input[placeholder="Username or email"]';
+      await this.clearAndType(page, usernameSelector, 'dichmebanga@gmail.com');
+
+      const passwordSelector = 'input[placeholder="Password"]';
+      await this.clearAndType(page, passwordSelector, 'Concat1233@');
+
+      await this.sleep(500);
       await page.click('button[type="submit"]');
-      console.log('Đã đăng nhập vào Grass');
+
+      console.log('Đăng nhập xong, bắt đầu vòng lặp reload trang...');
+      await this.startReloadLoop(page, 7200000);
     } catch (err) {
-      console.error('Lỗi khi đăng nhập vào Grass:', err);
+      console.error('Lỗi khi đăng nhập vào NodePay:', err);
     }
   }
 
@@ -462,5 +475,47 @@ export class CrawlWebPuppeterService {
 
   async sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async clearAndType(page, selector, text, chunkSize = 5, chunkDelay = 30) {
+    try {
+      await page.click(selector);
+      // clear content
+      await page.keyboard.down('Control');
+      await page.keyboard.press('A');
+      await page.keyboard.up('Control');
+      await page.keyboard.press('Delete');
+
+      // chunk length
+      await this.typeWithChunks(page, selector, text, chunkSize, chunkDelay);
+    } catch (err) {
+      console.error(
+        `Lỗi khi làm sạch và nhập dữ liệu vào trường ${selector}:`,
+        err,
+      );
+    }
+  }
+
+  async typeWithChunks(page, selector, text, chunkSize = 5, chunkDelay = 50) {
+    for (let i = 0; i < text.length; i += chunkSize) {
+      const chunk = text.slice(i, i + chunkSize);
+      await page.type(selector, chunk);
+      await this.sleep(chunkDelay);
+    }
+  }
+
+  async startReloadLoop(page, intervalMs = 7200000) {
+    // Mặc định là 2 tiếng
+    while (true) {
+      try {
+        console.log(`Chờ ${intervalMs / 1000} giây trước khi reload...`);
+        await this.sleep(intervalMs);
+        console.log('Reloading trang...');
+        await page.reload({ waitUntil: 'networkidle2' });
+      } catch (err) {
+        console.error('Lỗi khi reload trang:', err);
+        break;
+      }
+    }
   }
 }
