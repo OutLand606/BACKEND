@@ -43,7 +43,7 @@ export class CrawlWebPuppeterController {
     const { profileNames } = query;
     const profilesToClose = profileNames ? profileNames.split(',') : [];
     await this.service.closeProfile(profilesToClose);
-    return { message: 'Đã đóng các profile thành công!' };
+    return { message: 'Close Pages Success!' };
   }
 
   @Public()
@@ -59,7 +59,7 @@ export class CrawlWebPuppeterController {
     const { profileNames, scriptsName } = query;
     const profileNamesRunScript = profileNames ? profileNames.split(',') : [];
     await this.service.runScriptOnProfile(profileNamesRunScript, scriptsName);
-    return { message: 'Đã chạy script trên các profile thành công!' };
+    return { message: 'Run Script in Pages Success!' };
   }
 
   @Public()
@@ -69,19 +69,16 @@ export class CrawlWebPuppeterController {
       limits: { fileSize: 10 * 1024 * 1024 }, // Giới hạn 10 MB mỗi file
       fileFilter: (req, file, callback) => {
         if (!file.originalname.match(/\.txt$/)) {
-          return callback(
-            new BadRequestException('Chỉ cho phép tệp TXT!'),
-            false,
-          );
+          return callback(new BadRequestException('Only File TXT!'), false);
         }
         callback(null, true);
       },
     }),
   )
   async importFileTxT(@UploadedFile() file) {
-    const jsonPath =  await this.service.importFileTxt(file);
+    const jsonPath = await this.service.importFileTxt(file);
     return {
-      message: 'File TXT đã được chuyển đổi và lưu thành JSON thành công!',
+      message: 'The TxT file is converted and saved!',
       filePath: jsonPath,
     };
   }

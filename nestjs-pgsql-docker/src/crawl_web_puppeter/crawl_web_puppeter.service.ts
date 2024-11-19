@@ -12,8 +12,8 @@ const { width, height } = require('screenz');
 const axios = require('axios');
 import { Readable } from 'stream';
 import * as readline from 'readline';
-import proxies from './config/proxies.json';
-import userAgents from './config/userAgents.json';
+import proxies from '../../uploads/proxies.json';
+import userAgents from '../../uploads/userAgents.json';
 import { connect } from 'puppeteer-real-browser';
 
 @Injectable()
@@ -92,15 +92,21 @@ export class CrawlWebPuppeterService {
   // Load and declare data profile
   private loadProfiles() {
     const profilesDir = path.resolve(__dirname, '../../../profiles');
-    return fs
+    const folderNames = fs
       .readdirSync(profilesDir)
-      .filter((file) => fs.statSync(path.join(profilesDir, file)).isDirectory())
-      .map((folderName, index) => ({
+      .filter((file) =>
+        fs.statSync(path.join(profilesDir, file)).isDirectory(),
+      );
+
+    return folderNames.map((_, index) => {
+      const folderName = this.getRandomElement(folderNames); // Random folderName
+      return {
         id: (index + 1).toString(),
         name: folderName,
         proxy: this.getRandomElement(proxies),
         userAgent: this.getRandomElement(userAgents),
-      }));
+      };
+    });
   }
 
   // windows Size
@@ -339,8 +345,8 @@ export class CrawlWebPuppeterService {
         }
       }
 
-      console.log(`Profile được lưu vào: ${destination}`);
-      return { success: true, message: `Profile copied to ${destination}` };
+      console.log(`Profile save in: ${destination}`);
+      return { success: true, message: `Profile save to ${destination}` };
     } catch (error) {
       console.error('Lỗi khi sao chép profile:', error);
       throw new Error('Không thể sao chép profile.');
