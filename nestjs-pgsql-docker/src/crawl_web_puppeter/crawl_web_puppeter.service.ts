@@ -12,9 +12,10 @@ const { width, height } = require('screenz');
 const axios = require('axios');
 import { Readable } from 'stream';
 import * as readline from 'readline';
+import { connect } from 'puppeteer-real-browser';
 import proxies from '../../uploads/proxies.json';
 import userAgents from '../../uploads/userAgents.json';
-import { connect } from 'puppeteer-real-browser';
+import account from '../../uploads/account.json';
 
 @Injectable()
 export class CrawlWebPuppeterService {
@@ -377,10 +378,11 @@ export class CrawlWebPuppeterService {
     });
   }
 
-  async importFileTxt(file) {
+  async importFileTxt(file, options) {
     if (!file) {
       throw new BadRequestException('File là bắt buộc!');
     }
+
     const fileStream = Readable.from(file.buffer);
     const rl = readline.createInterface({
       input: fileStream,
@@ -388,16 +390,46 @@ export class CrawlWebPuppeterService {
     });
 
     const lines: string[] = [];
-
     for await (const line of rl) {
-      lines.push(line.trim());
-    }
-    const jsonFilename = path.basename(file.originalname, '.txt') + '.json';
+      const trimmedLine = line.trim();
 
-    // const jsonPath = path.join(__dirname, '../../uploads', jsonFilename); // Đường dẫn để lưu file tại dist build thực thi
-    const jsonPath = path.join(process.cwd(), 'uploads', jsonFilename); // Đường dẫn để lưu file tại dự án gốc
+      // Kiểm tra cấu trúc dữ liệu nếu options = proxies
+      if (options === 'proxies' && !trimmedLine.includes('http')) {
+        throw new BadRequestException(
+          'Invalid data file proxy!, The data stream must be structured http://username:pass@ip:port',
+        );
+      }
+
+      lines.push(trimmedLine);
+    }
+
+    // Đặt tên file dựa trên `options`
+    const filename =
+      options === 'account'
+        ? 'account.json'
+        : options === 'proxies'
+          ? 'proxies.json'
+          : null;
+    if (!filename) {
+      throw new BadRequestException('Options are invalid!');
+    }
+
+    const jsonPath = path.join(process.cwd(), 'uploads', filename);
     fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
-    fs.writeFileSync(jsonPath, JSON.stringify(lines, null, 2));
+
+    // Kiểm tra file có tồn tại không
+    if (fs.existsSync(jsonPath)) {
+      // Nếu file tồn tại, đọc nội dung cũ và thêm dữ liệu mới
+      const existingData = JSON.parse(
+        fs.readFileSync(jsonPath, 'utf-8') || '[]',
+      );
+      const mergedData = [...existingData, ...lines];
+      fs.writeFileSync(jsonPath, JSON.stringify(mergedData, null, 2));
+    } else {
+      // Nếu file chưa tồn tại, tạo mới và ghi dữ liệu
+      fs.writeFileSync(jsonPath, JSON.stringify(lines, null, 2));
+    }
+
     return jsonPath;
   }
 
