@@ -11,10 +11,6 @@ import {
 import { CrawlWebPuppeterService } from './crawl_web_puppeter.service';
 import { Public } from 'src/auth/metadata';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Readable } from 'stream';
-import * as readline from 'readline';
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Controller('crawl-web-puppeter')
 export class CrawlWebPuppeterController {
@@ -75,11 +71,17 @@ export class CrawlWebPuppeterController {
       },
     }),
   )
-  async importFileTxT(@UploadedFile() file) {
-    const jsonPath = await this.service.importFileTxt(file);
-    return {
-      message: 'The TxT file is converted and saved!',
-      filePath: jsonPath,
-    };
+  async importFileTxT(@UploadedFile() file, @Query() query) {
+    const { options } = query;
+
+    try {
+      const jsonPath = await this.service.importFileTxt(file, options);
+      return {
+        message: 'The TxT file is converted and saved!',
+        filePath: jsonPath,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }
