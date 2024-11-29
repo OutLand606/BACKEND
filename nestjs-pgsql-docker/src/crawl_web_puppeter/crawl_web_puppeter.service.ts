@@ -390,26 +390,39 @@ export class CrawlWebPuppeterService {
     });
 
     const lines: string[] = [];
+    let filename: string | null = null;
+
     for await (const line of rl) {
       const trimmedLine = line.trim();
 
-      // Kiểm tra cấu trúc dữ liệu nếu options = proxies
-      if (options === 'proxies' && !trimmedLine.includes('http')) {
-        throw new BadRequestException(
-          'Invalid data file proxy!, The data stream must be structured http://username:pass@ip:port',
-        );
+      switch (options) {
+        case 'proxies':
+          if (!trimmedLine.includes('http')) {
+            throw new BadRequestException(
+              'Invalid data file proxy! The data stream must be structured as http://username:pass@ip:port',
+            );
+          }
+          filename = 'proxies.json';
+          break;
+
+        case 'account':
+          if (!/^.+:.+$/.test(trimmedLine)) {
+            throw new BadRequestException(
+              'Invalid data file account! The data stream must be structured as (username || email):pass',
+            );
+          }
+          filename = 'account.json';
+          break;
+
+        // Thêm case khác nếu cần mở rộng
+        default:
+          throw new BadRequestException('Unsupported option provided!');
       }
 
       lines.push(trimmedLine);
     }
 
-    // Đặt tên file dựa trên `options`
-    const filename =
-      options === 'account'
-        ? 'account.json'
-        : options === 'proxies'
-          ? 'proxies.json'
-          : null;
+    // Kiểm tra nếu không có filename được đặt (dự phòng)
     if (!filename) {
       throw new BadRequestException('Options are invalid!');
     }
