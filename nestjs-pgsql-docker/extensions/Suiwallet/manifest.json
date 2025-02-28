@@ -1,0 +1,62 @@
+{
+"update_url": "https://clients2.google.com/service/update2/crx",
+
+  "name": "Sui Wallet",
+  "description": "Your Sui super app",
+  "version": "24.12.99.25",
+  "version_name": "24.12.99.25 (bf64fd6)",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "alarms",
+    "unlimitedStorage",
+    "identity"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "host_permissions": [],
+  "icons": {
+    "16": "/icon16.png",
+    "32": "/icon32.png",
+    "48": "/icon48.png",
+    "128": "/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dapp-interface.js",
+        "wa-sqlite-async.wasm"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    },
+    {
+      "resources": [
+        "index.html"
+      ],
+      "matches": [
+        "*://suiwallet.com/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'none'; object-src 'none'; connect-src *; font-src 'self'; img-src * data:; media-src *; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';"
+  }
+}

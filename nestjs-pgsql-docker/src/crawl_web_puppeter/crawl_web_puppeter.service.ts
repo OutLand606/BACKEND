@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { newInjectedPage } from 'fingerprint-injector';
+import { Server } from 'ws';
 import { parseWithOllama } from 'helper/ai-ollama/ollama';
 import { Devices, OperatingSystems } from './enum_type/enum_type_devices';
 import * as fs from 'fs';
@@ -20,6 +21,22 @@ import account from '../../uploads/account.json';
 @Injectable()
 export class CrawlWebPuppeterService {
   private browsers: { [key: string]: Browser } = {};
+  private wss: Server;
+
+  constructor() {
+    this.wss = new Server({ port: 8080 }); // Khởi tạo WebSocket Server tại port 8080
+
+    // Lắng nghe các sự kiện khi có client kết nối
+    this.wss.on('connection', (ws) => {
+      console.log('A browser connected.');
+
+      ws.on('message', async (message) => {
+        // Xử lý các tín hiệu từ client
+        await this.handleMouseEvent(message);
+      });
+    });
+  }
+
   async crawlDtaWebFingerPrint(url: string, parse_description: string) {
     let data;
     const browser = await puppeteer.launch({ headless: true });
@@ -211,6 +228,8 @@ export class CrawlWebPuppeterService {
       const nameProfile = `${profile.name}_${timestamp}`;
       this.browsers[nameProfile] = browser as any;
 
+      console.log('page created', page);
+
       await page.setViewport({ width: windowWidth, height: windowHeight });
 
       // Login proxy
@@ -231,6 +250,20 @@ export class CrawlWebPuppeterService {
       // Goto URL
       await page.goto(url, { waitUntil: 'networkidle2' });
       console.log(`Đang truy cập ${url}`);
+
+      await page.waitForSelector('body'); // Chờ trang đã tải xong
+
+
+      /////////////////////////////////////////////////////
+      // await page.on('mousemove', async (event: any) => {
+      //   console.log('set mousemove', event.clientX, event.clientY);
+      //   await this.broadcastMouseEvent('move', event.clientX, event.clientY);
+      // });
+
+      // await page.on('click', async (event: any) => {
+      //   console.log('set click', event.clientX, event.clientY);
+      //   await this.broadcastMouseEvent('click', event.clientX, event.clientY);
+      // });
 
       return { nameProfile, browser, page };
     } catch (err) {
@@ -568,5 +601,54 @@ export class CrawlWebPuppeterService {
         break;
       }
     }
+  }
+
+  async handleMouseEvent(message: string) {
+    const data = JSON.parse(message);
+
+    // Duyệt qua tất cả các trình duyệt và đồng bộ hành động chuột
+    Object.keys(this.browsers).forEach(async (browserName) => {
+      console.log('browserNamebrowserName', browserName);
+
+      const browser = this.browsers[browserName];
+      const page = await browser.pages();
+      page.forEach((p) => {
+        p.evaluate((data) => {
+          // Di chuyển chuột hoặc click dựa trên thông tin nhận được từ server
+          if (data.type === 'move') {
+            window.dispatchEvent(
+              new MouseEvent('mousemove', {
+                clientX: data.x,
+                clientY: data.y,
+              }),
+            );
+          } else if (data.type === 'click') {
+            window.dispatchEvent(
+              new MouseEvent('click', {
+                clientX: data.x,
+                clientY: data.y,
+              }),
+            );
+          }
+        }, data); // Truyền dữ liệu đến browser
+      });
+    });
+  }
+
+  async broadcastMouseEvent(type: string, x: number, y: number) {
+    console.log(123123, type, x, y);
+    const event = JSON.stringify({
+      type: type,
+      x: x,
+      y: y,
+    });
+
+    // Gửi tín hiệu đến tất cả các client WebSocket đang kết nối
+    this.wss.clients.forEach((client) => {
+      console.log('vao socket');
+      if (client.readyState === client.OPEN) {
+        client.send(event);
+      }
+    });
   }
 }
