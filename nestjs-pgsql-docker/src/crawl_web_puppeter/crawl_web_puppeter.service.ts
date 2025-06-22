@@ -16,6 +16,8 @@ import { connect } from 'puppeteer-real-browser';
 import proxies from '../../uploads/proxies.json';
 import userAgents from '../../uploads/userAgents.json';
 import account from '../../uploads/account.json';
+import { SocksProxyAgent } from 'socks-proxy-agent';
+
 
 @Injectable()
 export class CrawlWebPuppeterService {
@@ -371,6 +373,10 @@ export class CrawlWebPuppeterService {
             return await this.nodePay(pages);
             // await this.getExtension(browser);
           }
+          if (scriptsName === 'roBlox') {
+            return await this.roBlox(pages);
+            // await this.getExtension(browser);
+          }
         } catch (err) {
           console.error(`Lỗi khi chạy script trên profile "${name}":`, err);
         }
@@ -494,6 +500,132 @@ export class CrawlWebPuppeterService {
     }
   }
 
+  async roBlox(pages) {
+    const page = pages[0];
+
+    try {
+      console.log('Bắt đầu quá trình đăng ký tài khoản NodePay');
+
+      // Chọn ngẫu nhiên tháng sinh
+      await page.waitForSelector('#MonthDropdown', { timeout: 5000 });
+      const monthOptions = await page.evaluate(() => {
+        const select: any = document.querySelector('#MonthDropdown');
+        return Array.from(select.options)
+          .map((option: any) => option.value)
+          .filter((value) => value && value !== '');
+      });
+      const randomMonth =
+        monthOptions[Math.floor(Math.random() * monthOptions.length)];
+      await page.select('#MonthDropdown', randomMonth);
+      console.log(`✅ Đã chọn tháng: ${randomMonth}`);
+      await this.sleep(Math.floor(Math.random() * 500) + 500); // Độ trễ ngẫu nhiên 500-1000ms
+
+      // Chọn ngẫu nhiên ngày sinh
+      await page.waitForSelector('#DayDropdown', { timeout: 5000 });
+      const dayOptions = await page.evaluate(() => {
+        const select: any = document.querySelector('#DayDropdown');
+        return Array.from(select.options)
+          .map((option: any) => option.value)
+          .filter((value) => value && value !== '');
+      });
+      const randomDay =
+        dayOptions[Math.floor(Math.random() * dayOptions.length)];
+      await page.select('#DayDropdown', randomDay);
+      console.log(`✅ Đã chọn ngày: ${randomDay}`);
+      await this.sleep(Math.floor(Math.random() * 500) + 500);
+
+      // Chọn ngẫu nhiên năm sinh
+      await page.waitForSelector('#YearDropdown', { timeout: 5000 });
+      const yearOptions = await page.evaluate(() => {
+        const select: any = document.querySelector('#YearDropdown');
+        return Array.from(select.options)
+          .map((option: any) => option.value)
+          .filter((value) => value && value !== '');
+      });
+      const randomYear =
+        yearOptions[Math.floor(Math.random() * yearOptions.length)];
+      await page.select('#YearDropdown', randomYear);
+      console.log(`✅ Đã chọn năm: ${randomYear}`);
+      await this.sleep(Math.floor(Math.random() * 500) + 500);
+
+      // Tạo username ngẫu nhiên
+      const generateRandomUsername = () => {
+        const characters =
+          'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const length = Math.floor(Math.random() * 9) + 4; // Độ dài từ 4 đến 12
+        let username = '';
+        for (let i = 0; i < length; i++) {
+          username += characters.charAt(
+            Math.floor(Math.random() * characters.length),
+          );
+        }
+        return username;
+      };
+      const randomUsername = generateRandomUsername();
+      const usernameSelector = '#signup-username';
+      await this.clearAndType(page, usernameSelector, randomUsername);
+      console.log(`✅ Đã nhập username: ${randomUsername}`);
+      await this.sleep(Math.floor(Math.random() * 500) + 500);
+
+      // Nhập mật khẩu cố định
+      const fixedPassword = 'cOncAt3211@2@3@';
+      const passwordSelector = '#signup-password';
+      await this.clearAndType(page, passwordSelector, fixedPassword);
+      console.log(`✅ Đã nhập mật khẩu: ${fixedPassword}`);
+      await this.sleep(Math.floor(Math.random() * 500) + 500);
+
+      // Chọn ngẫu nhiên giới tính
+      await page.waitForSelector('#FemaleButton, #MaleButton', {
+        timeout: 5000,
+      });
+      const genderOptions = ['FemaleButton', 'MaleButton'];
+      const randomGenderId =
+        genderOptions[Math.floor(Math.random() * genderOptions.length)];
+      const randomGender = randomGenderId === 'FemaleButton' ? 'Nữ' : 'Nam';
+      await page.click(`#${randomGenderId}`);
+      console.log(`✅ Đã chọn giới tính: ${randomGender}`);
+      await this.sleep(Math.floor(Math.random() * 500) + 500);
+
+      // Nhấp vào nút Sign Up
+      const signupButtonSelector = '#signup-button';
+      await page.waitForSelector(signupButtonSelector, { timeout: 5000 });
+
+      // Kiểm tra nút có bị vô hiệu hóa không
+      const isButtonDisabled = await page.evaluate(() => {
+        const button = document.querySelector('#signup-button');
+        return button.hasAttribute('disabled');
+      });
+
+      if (isButtonDisabled) {
+        console.warn(
+          '⚠️ Nút Sign Up bị vô hiệu hóa, có thể do biểu mẫu chưa hoàn thiện',
+        );
+        throw new Error('Nút Sign Up bị vô hiệu hóa');
+      }
+
+      await page.click(signupButtonSelector);
+      console.log('✅ Đã nhấp nút Sign Up');
+      await this.sleep(1000);
+
+      // Kiểm tra thông báo lỗi (nếu có)
+      const errorMessage = await page.evaluate(() => {
+        const errorElements = document.querySelectorAll('.text-error');
+        return Array.from(errorElements)
+          .map((el) => el.textContent.trim())
+          .filter((text) => text);
+      });
+      if (errorMessage.length > 0) {
+        console.warn(`⚠️ Lỗi đăng ký: ${errorMessage.join(', ')}`);
+        throw new Error(`Đăng ký thất bại: ${errorMessage.join(', ')}`);
+      }
+
+      console.log('Đăng ký xong, bắt đầu vòng lặp reload trang...');
+      await this.startReloadLoop(page, 7200000); // Giữ nguyên logic reload từ code gốc
+    } catch (err) {
+      console.error('Lỗi khi đăng ký vào NodePay:', err);
+    }
+  }
+
   async getExtension(browser) {
     const page = await browser.newPage(); // Tạo một tab mới
     const extensionId = 'ilehaonighjijnmpnagapkhpcdbhclfg'; // ID của extension Grass.io
@@ -515,12 +647,36 @@ export class CrawlWebPuppeterService {
 
   async getIP(proxy) {
     try {
-      const response = await axios.get('https://api.ipify.org?format=json', {
-        httpsAgent: new HttpsProxyAgent(proxy),
-      });
-      return response.data.ip;
+      let agent; 
+      if (proxy) {
+        const proxyUrl = new URL(proxy);
+        if (proxyUrl.protocol === 'socks5:') {
+          // Sử dụng SocksProxyAgent cho SOCKS5
+          agent = new SocksProxyAgent(proxy);
+        } else if (
+          proxyUrl.protocol === 'http:' ||
+          proxyUrl.protocol === 'https:'
+        ) {
+          // Sử dụng HttpsProxyAgent cho HTTP/HTTPS
+          agent = new HttpsProxyAgent(proxy);
+        } else {
+          throw new Error(
+            `Giao thức proxy không được hỗ trợ: ${proxyUrl.protocol}`,
+          );
+        }
+
+        const response = await axios.get('https://api.ipify.org?format=json', {
+          httpsAgent: agent,
+        });
+        return response.data.ip;
+      } else {
+        // Không có proxy, gửi yêu cầu trực tiếp
+        const response = await axios.get('https://api.ipify.org?format=json');
+        return response.data.ip;
+      }
     } catch (error) {
       console.log('Lỗi khi lấy IP:', error.message);
+      return null;
     }
   }
 
@@ -570,3 +726,6 @@ export class CrawlWebPuppeterService {
     }
   }
 }
+
+
+// https://www.roblox.com/CreateAccount
